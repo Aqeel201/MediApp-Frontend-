@@ -216,7 +216,7 @@ const HomeScreen = () => {
     // { icon: faThermometer, label: "Health Devices", screen: "HealthDevices" },
     { icon: faKitMedical, label: "Medicine Match Game", screen: "MedicineMatchGame" },
     { icon: faStar, label: "Smart Interaction", screen: "SmartInteraction" },
-    // { icon: faComments, label: "Chat", screen: "Chat" },
+    { icon: faComments, label: "Chat", screen: "Chat" },
     // { icon: faTooth, label: "Dental Care", screen: "DentalCare" },
   ];
 
