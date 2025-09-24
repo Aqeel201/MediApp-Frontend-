@@ -1,0 +1,383 @@
+import React, { useRef } from "react";
+import {
+  View,
+  Text,
+  SafeAreaView,
+  StyleSheet,
+  TouchableOpacity,
+  StatusBar,
+  Animated,
+  ScrollView,
+} from "react-native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import {
+  faArrowLeft,
+  faBell,
+  faShoppingCart,
+  faCreditCard,
+  faCheckCircle,
+} from "@fortawesome/free-solid-svg-icons";
+import LottieView from "lottie-react-native";
+
+const ConfirmationScreen = () => {
+  const navigation = useNavigation();
+  const { order = {}, paymentMethod = "" } = useRoute().params || {};
+
+  // Fallback values
+  const orderTotal = typeof order.orderTotal === "number" ? order.orderTotal : 0;
+  const cartItems = Array.isArray(order.cartItems) ? order.cartItems : [];
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const codAnimationRef = useRef(null);
+  const easyPaisaAnimationRef = useRef(null);
+
+  // Fade in animation and play Lottie animations on screen focus
+  useFocusEffect(
+    React.useCallback(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start();
+      if (paymentMethod === "COD" && codAnimationRef.current) {
+        codAnimationRef.current.play();
+      } else if (paymentMethod === "EasyPaisa" && easyPaisaAnimationRef.current) {
+        easyPaisaAnimationRef.current.play();
+      }
+    }, [fadeAnim, paymentMethod])
+  );
+
+  const handleBackPress = () => {
+    navigation.goBack();
+  };
+
+  // Render message based on payment method
+  const renderMessage = () => {
+    if (paymentMethod === "COD") {
+      return (
+        <View style={styles.messageWrapper}>
+          <LottieView
+            ref={codAnimationRef}
+            source={require("../assets/packaging.json")} // Packaging animation for COD
+            style={styles.lottieAnimation}
+            loop
+          />
+          <Text style={styles.confirmationMessage}>
+            Your order has been placed successfully and is being packaged for delivery.
+          </Text>
+        </View>
+      );
+    } else if (paymentMethod === "EasyPaisa") {
+      return (
+        <View style={styles.messageWrapper}>
+          <LottieView
+            ref={easyPaisaAnimationRef}
+            source={require("../assets/pending-payment.json")} // Pending payment animation for EasyPaisa
+            style={styles.lottieAnimation}
+            loop
+          />
+          <Text style={styles.confirmationTitle}>Order Pending</Text>
+          <Text style={styles.confirmationMessage}>
+            Your order is pending. Complete your online transaction to confirm your order.
+          </Text>
+          <TouchableOpacity
+            style={styles.paymentButton}
+            onPress={() =>
+              navigation.navigate("JazzCashPayment", {
+                orderData: { orderTotal, cartItems },
+              })
+            }
+          >
+            <Text style={styles.paymentButtonText}>Complete Payment</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.messageWrapper}>
+          <Text style={styles.confirmationTitle}>Order Confirmed!</Text>
+          <Text style={styles.confirmationMessage}>
+            Thank you for your purchase. Your order is confirmed and will be delivered soon.
+          </Text>
+        </View>
+      );
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
+
+      {/* Header (Unchanged) */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleBackPress} style={styles.iconButton}>
+          <FontAwesomeIcon icon={faArrowLeft} size={24} color="#007bff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Confirmation</Text>
+        <TouchableOpacity style={styles.iconButton}>
+          <FontAwesomeIcon icon={faBell} size={24} color="#007bff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Progress Indicator (Unchanged) */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressStep}>
+          <View style={[styles.progressCircle, styles.activeStep]}>
+            <FontAwesomeIcon icon={faShoppingCart} size={20} color="#fff" />
+          </View>
+          <Text style={styles.progressTextActive}>Cart</Text>
+        </View>
+        <View style={styles.progressLineContainer}>
+          <View style={styles.animatedProgressLineFull} />
+        </View>
+        <View style={styles.progressStep}>
+          <View style={[styles.progressCircle, styles.activeStep]}>
+            <FontAwesomeIcon icon={faCreditCard} size={20} color="#fff" />
+          </View>
+          <Text style={styles.progressTextActive}>Checkout</Text>
+        </View>
+        <View style={styles.progressLineContainer}>
+          <View style={styles.animatedProgressLineFull} />
+        </View>
+        <View style={styles.progressStep}>
+          <View style={[styles.progressCircle, styles.activeStep]}>
+            <FontAwesomeIcon icon={faCheckCircle} size={20} color="#fff" />
+          </View>
+          <Text style={styles.progressTextActive}>Confirmation</Text>
+        </View>
+      </View>
+
+      {/* Confirmation Content */}
+      <Animated.View style={[styles.confirmationContainer, { opacity: fadeAnim }]}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.card}>
+            {renderMessage()}
+
+            {/* Order Details */}
+            <View style={styles.orderDetails}>
+              <Text style={styles.orderTitle}>Order Summary</Text>
+              {cartItems.map((item, index) => (
+                <View key={index} style={styles.orderItem}>
+                  <View style={styles.itemDetails}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemQuantity}>
+                      Quantity: {item.cartQuantity || item.quantity}
+                    </Text>
+                  </View>
+                  <Text style={styles.itemPrice}>
+                    Rs. {(item.price * (item.cartQuantity || item.quantity)).toFixed(2)}
+                  </Text>
+                </View>
+              ))}
+              <View style={styles.orderSummary}>
+                <View style={styles.divider} />
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryTotal}>Total</Text>
+                  <Text style={styles.summaryTotalAmount}>
+                    Rs. {orderTotal.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Continue Shopping Button */}
+          <TouchableOpacity
+            style={styles.homeButton}
+            onPress={() => navigation.navigate("Home")}
+          >
+            <Text style={styles.homeButtonText}>Continue Shopping</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </Animated.View>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: "#f0f2f5" },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 15,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#1F2937",
+    letterSpacing: 0.5,
+  },
+  iconButton: { padding: 8 },
+  progressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 15,
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+  },
+  progressStep: { alignItems: "center", flex: 1 },
+  progressCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 5,
+    backgroundColor: "#C4C4C4",
+  },
+  activeStep: { backgroundColor: "#007bff" },
+  progressTextActive: { fontSize: 12, fontWeight: "500", color: "#007bff" },
+  progressLineContainer: {
+    width: 40,
+    height: 2,
+    backgroundColor: "#E5E7EB",
+    marginHorizontal: 4,
+  },
+  
+  animatedProgressLineFull: { height: 2, backgroundColor: "#007bff", width: "100%" },
+  confirmationContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    paddingBottom: 30,
+  },
+  card: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+    marginBottom: 20,
+  },
+  messageWrapper: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  lottieAnimation: {
+    width: 150,
+    height: 150,
+    marginBottom: 10,
+  },
+  confirmationTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#007bff",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  confirmationMessage: {
+    fontSize: 16,
+    color: "#4B5563",
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  paymentButton: {
+    backgroundColor: "#28a745",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    marginTop: 15,
+  },
+  paymentButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  orderDetails: {
+    width: "100%",
+  },
+  orderTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#007bff",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  orderItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EDEDED",
+  },
+  itemDetails: {
+    flex: 3,
+  },
+  itemName: {
+    fontSize: 16,
+    color: "#1F2937",
+    fontWeight: "500",
+  },
+  itemQuantity: {
+    fontSize: 14,
+    color: "#6C757D",
+  },
+  itemPrice: {
+    fontSize: 16,
+    color: "#1F2937",
+    fontWeight: "600",
+    flex: 1,
+    textAlign: "right",
+  },
+  orderSummary: {
+    marginTop: 15,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+  },
+  summaryTotal: {
+    fontSize: 18,
+    color: "#1F2937",
+    fontWeight: "700",
+  },
+  summaryTotalAmount: {
+    fontSize: 18,
+    color: "#1F2937",
+    fontWeight: "700",
+  },
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#EDEDED",
+    marginVertical: 10,
+  },
+  homeButton: {
+    backgroundColor: "#007bff",
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    marginTop: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  homeButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+});
+
+export default ConfirmationScreen;

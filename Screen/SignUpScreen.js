@@ -1,0 +1,459 @@
+import React, { useState } from 'react';
+import {
+  Text, View, TextInput, TouchableOpacity,
+  StyleSheet, Alert, Image, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useTheme } from './ThemeContext';
+import axios from 'axios';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const defaultTheme = {
+  colors: {
+    primary: '#0d6efd',
+    background: '#f8f9fa',
+    textPrimary: '#212529',
+    textSecondary: '#495057',
+    inputBackground: '#ffffff',
+    inputBorder: '#dee2e6',
+  }
+};
+
+const SignUpScreen = () => {
+  const navigation = useNavigation();
+  const context = useTheme();
+
+  const theme = {
+    colors: {
+      ...defaultTheme.colors,
+      ...(context?.theme?.colors || {}),
+    }
+  };
+
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    CNICNo: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [profileImage, setProfileImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const pickProfileImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow access to your photos to upload a profile picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setProfileImage(result.assets[0].uri);
+    }
+  };
+
+  const handleInputChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validateForm = () => {
+    const { firstName, email, password, confirmPassword } = formData;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!firstName.trim()) return 'First name is required';
+    if (!emailRegex.test(email)) return 'Please enter a valid email address';
+    if (!email.toLowerCase().endsWith('@gmail.com')) return 'Please use a Gmail address';
+    if (password.length < 6) return 'Password must be at least 6 characters';
+    if (password !== confirmPassword) return 'Passwords do not match';
+    return null;
+  };
+
+  const handleSignUp = async () => {
+    const validationError = validateForm();
+    if (validationError) {
+      Alert.alert('Validation Error', validationError);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const form = new FormData();
+      form.append('firstName', formData.firstName);
+      form.append('lastName', formData.lastName);
+      form.append('CNICNo', formData.CNICNo);
+      form.append('email', formData.email.toLowerCase());
+      form.append('password', formData.password);
+
+      if (profileImage) {
+        form.append('profileImage', {
+          uri: profileImage,
+          name: `profile_${Date.now()}.jpg`,
+          type: 'image/jpeg',
+        });
+      }
+
+      console.log('Sending signup request:', {
+        firstName: formData.firstName,
+        email: formData.email.toLowerCase(),
+        hasPassword: !!formData.password,
+        hasImage: !!profileImage
+      });
+
+      const response = await axios.post('http://192.168.18.24:3000/api/auth/signup', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      console.log('Signup response:', response.data);
+
+      if (response.status === 201) {
+        await AsyncStorage.setItem('tempAuthToken', response.data.token);
+        await AsyncStorage.setItem('tempUser', JSON.stringify(response.data.user));
+        Alert.alert('Success', 'OTP sent to your email. Please verify to complete registration.');
+        navigation.navigate('VerifyOTP', { email: formData.email.toLowerCase() });
+      }
+    } catch (error) {
+      console.error('Registration error:', error.response?.data || error.message);
+      const errorMessage = error.response?.data?.message || 'Could not register. Please try again.';
+      Alert.alert('Registration Failed', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles(theme).container}
+    >
+      <ScrollView
+        contentContainerStyle={styles(theme).scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles(theme).header}>
+          <Image
+            source={require('../assets/LogoBGR.png')}
+            style={styles(theme).logo}
+            resizeMode="contain"
+          />
+          <Text style={styles(theme).title}>Create New Account</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles(theme).imagePicker}
+          onPress={pickProfileImage}
+          activeOpacity={0.8}
+        >
+          {profileImage ? (
+            <Image
+              source={{ uri: profileImage }}
+              style={styles(theme).profileImage}
+            />
+          ) : (
+            <View style={styles(theme).imagePlaceholder}>
+              <FontAwesome
+                name="camera"
+                size={32}
+                color={theme.colors.primary}
+              />
+              <Text style={styles(theme).imagePickerText}>
+                Add Profile Photo
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        <View style={styles(theme).formContainer}>
+          <View style={styles(theme).nameRow}>
+            <View style={[styles(theme).inputWrapper, styles(theme).nameInput]}>
+              <FontAwesome
+                name="user-o"
+                size={16}
+                style={styles(theme).icon}
+              />
+              <TextInput
+                style={styles(theme).input}
+                placeholder="First Name *"
+                placeholderTextColor={theme.colors.textSecondary}
+                value={formData.firstName}
+                onChangeText={(text) => handleInputChange('firstName', text)}
+              />
+            </View>
+            <View style={styles(theme).spacer} />
+            <View style={[styles(theme).inputWrapper, styles(theme).nameInput]}>
+              <FontAwesome
+                name="user-o"
+                size={16}
+                style={styles(theme).icon}
+              />
+              <TextInput
+                style={styles(theme).input}
+                placeholder="Last Name"
+                placeholderTextColor={theme.colors.textSecondary}
+                value={formData.lastName}
+                onChangeText={(text) => handleInputChange('lastName', text)}
+              />
+            </View>
+          </View>
+
+          <View style={styles(theme).inputWrapper}>
+            <FontAwesome
+              name="id-card"
+              size={16}
+              style={styles(theme).icon}
+            />
+            <TextInput
+              style={styles(theme).input}
+              placeholder="CNIC Number"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={formData.CNICNo}
+              onChangeText={(text) => handleInputChange('CNICNo', text)}
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles(theme).inputWrapper}>
+            <FontAwesome
+              name="envelope-o"
+              size={16}
+              style={styles(theme).icon}
+            />
+            <TextInput
+              style={styles(theme).input}
+              placeholder="Email (Gmail only) *"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={formData.email}
+              onChangeText={(text) => handleInputChange('email', text.toLowerCase())}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={true}
+              spellCheck={true}
+              inputMode="email"
+            />
+          </View>
+
+          <View style={styles(theme).inputWrapper}>
+            <FontAwesome
+              name="lock"
+              size={18}
+              style={styles(theme).icon}
+            />
+            <TextInput
+              style={styles(theme).input}
+              placeholder="Password *"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={formData.password}
+              onChangeText={(text) => handleInputChange('password', text)}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles(theme).eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <FontAwesome
+                name={showPassword ? "eye" : "eye-slash"}
+                size={18}
+                color={theme.colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles(theme).inputWrapper}>
+            <FontAwesome
+              name="lock"
+              size={18}
+              style={styles(theme).icon}
+            />
+            <TextInput
+              style={styles(theme).input}
+              placeholder="Confirm Password *"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={formData.confirmPassword}
+              onChangeText={(text) => handleInputChange('confirmPassword', text)}
+              secureTextEntry={!showConfirmPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles(theme).eyeIcon}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <FontAwesome
+                name={showConfirmPassword ? "eye" : "eye-slash"}
+                size={18}
+                color={theme.colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles(theme).submitButton,
+            loading && styles(theme).disabledButton
+          ]}
+          onPress={handleSignUp}
+          disabled={loading}
+          activeOpacity={0.9}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={theme.colors.background} />
+          ) : (
+            <Text style={styles(theme).buttonText}>Send OTP</Text>
+          )}
+        </TouchableOpacity>
+
+        <View style={styles(theme).loginContainer}>
+          <Text style={styles(theme).loginText}>Already have an account?</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles(theme).loginLink}> Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+};
+
+const styles = (theme = defaultTheme) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 20,
+    paddingTop: 25,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  logo: {
+    width: 150,
+    height: 150,
+    marginBottom: -40,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: theme.colors.primary,
+    letterSpacing: 0.5,
+    marginTop: 5,
+  },
+  imagePicker: {
+    alignSelf: 'center',
+    marginBottom: 25,
+  },
+  profileImage: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+  },
+  imagePlaceholder: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: theme.colors.inputBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+  },
+  imagePickerText: {
+    color: theme.colors.primary,
+    marginTop: 6,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  formContainer: {
+    marginBottom: 15,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  nameInput: {
+    flex: 1,
+    maxWidth: '48%',
+  },
+  spacer: {
+    width: 10,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.inputBackground,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.inputBorder,
+  },
+  icon: {
+    marginRight: 10,
+    color: theme.colors.textSecondary,
+  },
+  input: {
+    flex: 1,
+    height: 48,
+    color: theme.colors.textPrimary,
+    fontSize: 15,
+    paddingVertical: 0,
+  },
+  eyeIcon: {
+    padding: 6,
+    marginLeft: 4,
+  },
+  submitButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 2,
+    marginTop: 15,
+  },
+  disabledButton: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: theme.colors.background,
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+  },
+  loginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  loginText: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+  },
+  loginLink: {
+    color: theme.colors.primary,
+    fontWeight: '600',
+  },
+});
+
+export default SignUpScreen;
