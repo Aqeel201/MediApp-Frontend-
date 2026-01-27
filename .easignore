@@ -1,0 +1,10 @@
+# EAS ignore
+node_modules/
+.expo/
+.git/
+MediApp/
+ios/
+dist/
+web-build/
+.idea/
+.vscode/
