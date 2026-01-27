@@ -31,7 +31,14 @@
     },
     "plugins": [
       "expo-audio",
-      "expo-video"
+      "expo-video",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.aqee.MediApp",
+          "enableGooglePay": true
+        }
+      ]
     ]
   }
 }
