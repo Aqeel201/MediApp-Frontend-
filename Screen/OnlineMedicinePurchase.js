@@ -108,7 +108,7 @@ const ProductCartScreen = () => {
       />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <FontAwesomeIcon icon={faArrowLeft} size={24} color={isDarkMode ? "#fff" : "#007bff"} />
         </TouchableOpacity>
@@ -267,13 +267,13 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: isDarkMode ? "#121212" : "#F9FAFB",
-    paddingTop: insets.top,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
     backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
     borderBottomWidth: 1,
     borderBottomColor: isDarkMode ? "#333" : "#E5E7EB",

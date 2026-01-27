@@ -11,8 +11,9 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Location from 'expo-location';
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
   faArrowLeft,
@@ -22,19 +23,22 @@ import {
   faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { CartContext } from "./CartContext";
+import { useTheme } from './ThemeContext';
 
 const OnlineMedicinePurchase = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { isDarkMode } = useTheme();
   const cartContext = useContext(CartContext);
 
   if (!cartContext) {
     console.warn("CartContext is not provided");
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.safeArea}>
         <Text style={styles.errorText}>
           CartContext is not available. Please ensure it’s provided in the component tree.
         </Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -70,6 +74,32 @@ const OnlineMedicinePurchase = () => {
     console.log("CartContext:", cartContext);
     console.log("CartItems:", cartItems);
   }, [cartContext, cartItems]);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        return;
+      }
+      try {
+        let location = await Location.getCurrentPositionAsync({});
+        setFormData(prev => ({ ...prev, location: { latitude: location.coords.latitude, longitude: location.coords.longitude } }));
+        let address = await Location.reverseGeocodeAsync(location.coords);
+        if (address && address.length > 0) {
+          const { street, city, region, country } = address[0];
+          setFormData(prev => ({
+            ...prev,
+            streetAddress: prev.streetAddress || street || "",
+            city: city || region || "Skardu",
+            country: country || "Pakistan",
+            region: region || "Skardu"
+          }));
+        }
+      } catch (error) {
+        console.error("Location error:", error);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem("user")
@@ -189,6 +219,7 @@ const OnlineMedicinePurchase = () => {
       cartItems,
       shippingFee,
       orderTotal,
+      location: formData.location || null, // Added live location coordinates
     };
 
     Animated.timing(progressLine2Anim, {
@@ -214,9 +245,13 @@ const OnlineMedicinePurchase = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
-      <View style={styles.header}>
+    <View style={styles.safeArea}>
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent={true}
+      />
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <TouchableOpacity onPress={handleBackPress} style={styles.iconButton}>
           <FontAwesomeIcon icon={faArrowLeft} size={24} color="#007bff" />
         </TouchableOpacity>
@@ -302,13 +337,13 @@ const OnlineMedicinePurchase = () => {
             onChangeText={(text) => handleInputChange("streetAddress", text)}
           />
           <View style={styles.disabledField}>
-            <Text style={styles.disabledText}>Pakistan</Text>
+            <Text style={styles.disabledText}>{formData.country || "Pakistan"}</Text>
           </View>
           <View style={styles.disabledField}>
-            <Text style={styles.disabledText}>Skardu</Text>
+            <Text style={styles.disabledText}>{formData.region || "Skardu"}</Text>
           </View>
           <View style={styles.disabledField}>
-            <Text style={styles.disabledText}>Skardu</Text>
+            <Text style={styles.disabledText}>{formData.city || "Skardu"}</Text>
           </View>
           <Text style={styles.note}>
             Currently <Text style={styles.bold}>Mediapp</Text> is only available in the Skardu region.
@@ -454,7 +489,7 @@ const OnlineMedicinePurchase = () => {
           <Text style={styles.placeOrderText}>Place Order</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

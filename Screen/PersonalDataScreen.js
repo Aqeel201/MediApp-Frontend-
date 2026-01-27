@@ -13,7 +13,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
@@ -34,6 +36,7 @@ import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, CreditCard } from 'luci
 const PersonalDataScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
 
   // State variables
   const [firstName, setFirstName] = useState('');
@@ -55,16 +58,12 @@ const PersonalDataScreen = () => {
         const user = JSON.parse(userStr);
         setFirstName(user.firstName || '');
         setLastName(user.lastName || '');
-        setCNICNo(user.CNICNo || ''); // Load CNIC if exists
+        setCNICNo(user.CNICNo || '');
         setEmail(user.email || '');
         setPhone(user.phone || '');
         setAddress(user.address || '');
         setDob(user.dob || '');
-        setProfileImage(
-          user.profileImage
-            ? user.profileImage
-            : null
-        );
+        setProfileImage(user.profileImage || null);
       }
     } catch (error) {
       console.error('Error loading user data', error);
@@ -82,25 +81,65 @@ const PersonalDataScreen = () => {
     setRefreshing(false);
   }, [loadUserData]);
 
-  // Pick an image using Expo ImagePicker
+  // Take a photo using Camera
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      console.log('Camera permission status:', status);
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Camera permission is required to take photos.');
+        return;
+      }
+      console.log('Launching camera...');
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+      console.log('Camera result:', result);
+      if (!result.canceled) {
+        setProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error in takePhoto:', error);
+      Alert.alert('Error', 'Failed to launch camera.');
+    }
+  };
+
+  // Pick an image from Gallery
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(
-        'Permission Denied',
-        'We need permission to access your photos to update your profile picture.'
-      );
-      return;
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('Media library permission status:', status);
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Photo library permission is required to select photos.');
+        return;
+      }
+      console.log('Launching gallery...');
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+      console.log('Gallery result:', result);
+      if (!result.canceled) {
+        setProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error in pickImage:', error);
+      Alert.alert('Error', 'Failed to launch gallery.');
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
-    }
+  };
+
+  const handleImagePicker = () => {
+    Alert.alert(
+      'Profile Picture',
+      'Choose an option',
+      [
+        { text: 'Camera', onPress: takePhoto },
+        { text: 'Gallery', onPress: pickImage },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
   };
 
   // Save updated data to the backend
@@ -110,7 +149,7 @@ const PersonalDataScreen = () => {
       const formData = new FormData();
       formData.append('firstName', firstName);
       formData.append('lastName', lastName || '');
-      formData.append('CNICNo', CNICNo || ''); // Append CNIC field
+      formData.append('CNICNo', CNICNo || '');
       formData.append('phone', phone || '');
       formData.append('address', address || '');
       formData.append('dob', dob || '');
@@ -125,12 +164,7 @@ const PersonalDataScreen = () => {
           type,
         });
       }
-      console.log('Sending update to Auth Backend:', {
-        firstName,
-        lastName: lastName || '',
-        CNICNo: CNICNo || '',
-        hasImage: !!profileImage
-      });
+
       const token = await AsyncStorage.getItem('authToken');
       const response = await axios.put(
         'https://auth-backend-three-navy.vercel.app/api/auth/update',
@@ -168,16 +202,24 @@ const PersonalDataScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent={true}
+      />
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={{ paddingTop: insets.top + 10 }}
+      >
         <View style={styles.header}>
           <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
             <ArrowLeft size={24} color={isDarkMode ? 'white' : '#0d6efd'} />
           </TouchableOpacity>
-          <Text style={[styles.headerText, { marginTop: 20 }]}>Personal Data</Text>
+          <Text style={styles.headerText}>Personal Data</Text>
         </View>
 
         <View style={styles.profileSection}>
-          <TouchableOpacity onPress={pickImage}>
+          <TouchableOpacity onPress={handleImagePicker}>
             {profileImage ? (
               <Image source={{ uri: profileImage }} style={styles.profilePic} />
             ) : (
@@ -208,7 +250,6 @@ const PersonalDataScreen = () => {
               placeholderTextColor={isDarkMode ? '#aaa' : '#666'}
             />
           </View>
-          {/* CNIC Field */}
           <View style={styles.inputContainer}>
             <CreditCard size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
             <TextInput

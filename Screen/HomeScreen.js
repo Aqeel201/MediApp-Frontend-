@@ -263,10 +263,9 @@ const HomeScreen = () => {
           barStyle={isDarkMode ? "light-content" : "dark-content"}
           backgroundColor="transparent"
           translucent={true}
-          animated={true}
         />
         <ScrollView
-          contentContainerStyle={styles.scrollContainer}
+          contentContainerStyle={[styles.scrollContainer, { paddingTop: insets.top + 20 }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -521,7 +520,6 @@ const getStyles = (isDarkMode, screenWidth, insets) =>
     container: {
       flex: 1,
       backgroundColor: "transparent",
-      paddingTop: insets.top,
     },
     scrollContainer: {
       padding: 20,

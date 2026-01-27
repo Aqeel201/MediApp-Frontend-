@@ -148,9 +148,14 @@ const FeedbackScreen = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar
+        style={isDarkMode ? "light" : "dark"}
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <LinearGradient
         colors={isDarkMode ? ['#1c1c1c', '#121212'] : ['#0d6efd', '#4682b4']}
-        style={styles.header}
+        style={[styles.header, { paddingTop: insets.top + 15 }]}
       >
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
           <FontAwesomeIcon icon={faArrowLeft} size={24} color="#fff" />
@@ -253,7 +258,6 @@ const getStyles = (isDarkMode) =>
       flexDirection: 'row',
       alignItems: 'center',
       padding: 15,
-      paddingTop: 40,
       borderBottomWidth: 0,
     },
     headerText: {

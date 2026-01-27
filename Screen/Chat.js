@@ -1,18 +1,47 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity, Text, Linking } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, Text, Linking, StatusBar, ActivityIndicator } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar, Day, Time } from 'react-native-gifted-chat';
 import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAudioRecorder, Audio, setAudioModeAsync, requestRecordingPermissionsAsync } from 'expo-audio';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
-import { Image as ImageIcon, Mic, Paperclip } from 'lucide-react-native';
+import { Image as ImageIcon, Mic, Paperclip, Camera, ArrowLeft } from 'lucide-react-native';
+import { useTheme } from './ThemeContext';
+import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
 
 const VERCEL_URL = 'https://dashboard-backend-xrss.vercel.app';
 const LOCAL_URL = 'http://192.168.1.100:2000'; // Replace with your local IP
 const SOCKET_URL = VERCEL_URL; // Toggle here
 
 const Chat = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
+
+  // Notification Handler Setup
+  useEffect(() => {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  }, []);
+
+  const sendLocalNotification = async (title, body) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: true,
+      },
+      trigger: null,
+    });
+  };
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
   const [userId, setUserId] = useState(null);
@@ -60,14 +89,15 @@ const Chat = ({ navigation }) => {
         setUserId(storedUserId);
         setAuthToken(token);
 
+        const isVercel = SOCKET_URL.includes('vercel.app');
         const socketInstance = io(SOCKET_URL, {
           query: { token },
-          transports: ['websocket', 'polling'],
+          transports: isVercel ? ['polling'] : ['websocket', 'polling'], // Force polling on Vercel
           reconnection: true,
           reconnectionAttempts: 5,
         });
 
-        console.log('Attempting to connect to:', SOCKET_URL, 'with token:', token);
+        console.log('Attempting to connect to:', SOCKET_URL, 'Mode:', isVercel ? 'Polling' : 'WebSocket');
 
         socketInstance.on('connect', () => {
           console.log('✅ Socket connected:', socketInstance.id);
@@ -76,9 +106,11 @@ const Chat = ({ navigation }) => {
         });
 
         socketInstance.on('connect_error', (err) => {
-          console.warn('❌ Socket connection error (expected on Vercel):', err.message);
+          // Only log if not on Vercel or if it's a real error
+          if (!isVercel) {
+            console.warn('❌ Socket connection error:', err.message);
+          }
           setIsSocketConnected(false);
-          // Removed Alert to prevent spamming user on Vercel
         });
 
         socketInstance.on('error', (err) => {
@@ -146,7 +178,7 @@ const Chat = ({ navigation }) => {
             message.image = `${SOCKET_URL}${msg.content}`;
           } else if (msg.type === 'voice' || msg.type === 'document') {
             message.text = `[${msg.type.toUpperCase()}] ${msg.content.split('/').pop()}`;
-            message.file = `${SOCKET_URL}${msg.content}`;
+            message.file = msg.content.startsWith('http') ? msg.content : `${SOCKET_URL}${msg.content}`;
           }
           setMessages((prev) => {
             // Prevent duplicates by checking _id
@@ -168,54 +200,57 @@ const Chat = ({ navigation }) => {
         setSocket(socketInstance);
         setIsLoading(false);
 
-        // Polling Fallback: Fetch messages every 5 seconds if socket is not connected or as a safety
-        const pollingInterval = setInterval(async () => {
+        // Polling Fallback: Fetch messages every 3 seconds
+        const fetchMessages = async () => {
           if (!token || !storedUserId) return;
-          console.log('Polling for new messages...');
           try {
             const response = await axios.get(`${SOCKET_URL}/api/messages/admin`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data && Array.isArray(response.data)) {
-              const fetchedMessages = response.data;
-              const formatted = fetchedMessages.map(msg => {
+              const formatted = response.data.map(msg => {
                 const msgId = msg._id || msg.id || Math.random().toString();
                 const timestamp = msg.timestamp || msg.createdAt || new Date().toISOString();
                 const senderId = msg.sender || msg.userId;
-
-                const message = {
+                return {
                   _id: msgId,
                   createdAt: new Date(timestamp),
                   user: {
-                    _id: senderId === storedUserId ? 1 : 2,
-                    name: senderId === 'admin' ? 'Admin' : 'You'
+                    _id: (senderId === storedUserId || senderId === userId) ? 1 : 2,
+                    name: (senderId === 'admin' || senderId !== storedUserId) ? 'Admin' : 'You'
                   },
+                  text: msg.type === 'text' ? (msg.content || msg.text || '') : `[${msg.type.toUpperCase()}] ${msg.content?.split('/').pop() || 'File'}`,
+                  image: msg.type === 'image' ? (msg.content?.startsWith('http') ? msg.content : `${SOCKET_URL}${msg.content}`) : undefined,
+                  file: (msg.type === 'voice' || msg.type === 'document') ? (msg.content?.startsWith('http') ? msg.content : `${SOCKET_URL}${msg.content}`) : undefined,
                 };
-
-                if (msg.type === 'text') {
-                  message.text = msg.content || msg.text || '';
-                } else if (msg.type === 'image') {
-                  message.image = msg.content?.startsWith('http') ? msg.content : `${SOCKET_URL}${msg.content}`;
-                } else if (msg.type === 'voice' || msg.type === 'document') {
-                  message.text = `[${msg.type.toUpperCase()}] ${msg.content?.split('/').pop() || 'File'}`;
-                  message.file = msg.content?.startsWith('http') ? msg.content : `${SOCKET_URL}${msg.content}`;
-                }
-                return message;
               });
 
               setMessages(prev => {
                 const newMsgs = formatted.filter(m => !prev.some(p => p._id === m._id));
                 if (newMsgs.length > 0) {
-                  console.log(`Polling added ${newMsgs.length} new messages`);
+                  const newestAdminMsg = newMsgs.find(m => m.user._id === 2);
+                  if (newestAdminMsg) {
+                    let notifBody = newestAdminMsg.text || "Sent a media file";
+                    if (newestAdminMsg.image) notifBody = "Sent a photo";
+                    if (newestAdminMsg.file) {
+                      if (notifBody.includes("[VOICE]")) notifBody = "Sent a voice message";
+                      else if (notifBody.includes("[DOCUMENT]")) notifBody = "Sent a document";
+                    }
+                    sendLocalNotification("New message from Admin", notifBody);
+                  }
                   return GiftedChat.append(prev, newMsgs.reverse());
                 }
                 return prev;
               });
             }
           } catch (error) {
-            console.warn('Polling failed:', error.message);
+            // Silently handle polling errors
           }
-        }, 5000);
+        };
+
+        // Initial fetch
+        fetchMessages();
+        const pollingInterval = setInterval(fetchMessages, 3000);
 
         // Cleanup on unmount
         return () => {
@@ -236,9 +271,9 @@ const Chat = ({ navigation }) => {
 
   const onSend = useCallback(
     (newMessages = []) => {
-      if (!socket || !userId) {
-        console.error('Cannot send message: socket or userId missing');
-        Alert.alert('Error', 'Unable to send message. Please try again.');
+      if (!userId || !authToken) {
+        console.error('Cannot send message: userId or authToken missing');
+        Alert.alert('Error', 'Unable to send message. Please log in again.');
         return;
       }
       newMessages.forEach(async (msg) => {
@@ -254,14 +289,14 @@ const Chat = ({ navigation }) => {
             headers: { Authorization: `Bearer ${authToken}` },
           });
           console.log('POST message response:', response.data);
-          // Socket will emit receiveMessage which will append to state
+          // Socket (if connected) or Polling will handle receiving the message back
         } catch (error) {
           console.error('Failed to send message via POST:', error.message);
           Alert.alert('Error', 'Failed to send message: ' + (error.response?.data?.error || error.message));
         }
       });
     },
-    [socket, userId]
+    [userId, authToken]
   );
 
   const startRecording = async () => {
@@ -281,7 +316,7 @@ const Chat = ({ navigation }) => {
     if (!isRecording) return;
     console.log('Stopping recording...');
     try {
-      await recorder.stopAsync();
+      recorder.stop();
       const uri = recorder.uri;
       setIsRecording(false);
 
@@ -310,6 +345,44 @@ const Chat = ({ navigation }) => {
     } catch (err) {
       console.error('Error stopping or uploading recording:', err);
       Alert.alert('Error', 'Failed to send voice message.');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Camera permission is required to take photos.');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+
+      if (result.canceled) return;
+
+      const { uri, fileName, type } = result.assets[0];
+      const formData = new FormData();
+      formData.append('file', {
+        uri,
+        type: 'image/jpeg',
+        name: fileName || `photo_${Date.now()}.jpg`,
+      });
+      formData.append('userId', userId);
+      formData.append('type', 'image');
+      formData.append('receiver', 'admin');
+
+      const response = await axios.post(`${SOCKET_URL}/chat/upload`, formData, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log('Photo uploaded:', response.data);
+    } catch (err) {
+      console.error('Error taking/uploading photo:', err.response?.data || err.message);
+      Alert.alert('Error', 'Failed to upload photo.');
     }
   };
 
@@ -442,6 +515,9 @@ const Chat = ({ navigation }) => {
           <TouchableOpacity onPress={() => pickFile('image')}>
             <ImageIcon size={24} color="#007AFF" />
           </TouchableOpacity>
+          <TouchableOpacity onPress={takePhoto}>
+            <Camera size={24} color="#007AFF" />
+          </TouchableOpacity>
           <TouchableOpacity
             onPressIn={startRecording}
             onPressOut={stopRecording}
@@ -459,22 +535,22 @@ const Chat = ({ navigation }) => {
   if (isLoading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <GiftedChat
-          messages={[]}
-          user={{ _id: 1 }}
-          renderInputToolbar={() => null}
-        />
-        <View style={StyleSheet.absoluteFill}>
-          <Text style={{ alignSelf: 'center', marginTop: '50%' }}>Loading chat...</Text>
-        </View>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={{ marginTop: 10, color: isDarkMode ? '#fff' : '#000' }}>Loading chat...</Text>
       </View>
     );
   }
 
-  console.log('Rendering GiftedChat with messages:', JSON.stringify(messages, null, 2));
+
+
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: isDarkMode ? '#1c1c1c' : '#fff' }]}>
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <GiftedChat
         messages={messages}
         onSend={onSend}
@@ -490,14 +566,15 @@ const Chat = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: isDarkMode ? '#1c1c1c' : '#fff',
   },
   inputToolbar: {
     borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
+    borderTopColor: isDarkMode ? '#444' : '#E5E5EA',
+    backgroundColor: isDarkMode ? '#1c1c1c' : '#fff',
     padding: 5,
   },
   actionsContainer: {
@@ -508,7 +585,7 @@ const styles = StyleSheet.create({
   },
   fileContainer: {
     padding: 10,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: isDarkMode ? '#2d2d2d' : '#f0f0f0',
     borderRadius: 10,
   },
   fileText: {

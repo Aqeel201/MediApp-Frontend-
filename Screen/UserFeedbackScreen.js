@@ -27,32 +27,26 @@ const UserFeedbackScreen = () => {
   const [feedbackList, setFeedbackList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const fadeAnim = useRef(new Animated.Value(0)).current; // Animation for feedback items
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const API_URL = 'https://auth-backend-three-navy.vercel.app/api/feedback';
-  const IMAGE_BASE_URL = 'https://auth-backend-three-navy.vercel.app/uploads/';
 
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
         const token = await AsyncStorage.getItem('authToken');
         const userData = await AsyncStorage.getItem('user');
-        console.log('Checking login status:', { token: !!token, userData: !!userData });
         if (token && userData) {
           const user = JSON.parse(userData);
           if (user.id && user.email) {
-            console.log('Login verified:', { email: user.email, userId: user.id });
             await fetchFeedback(token);
           } else {
-            console.log('Invalid user data:', user);
             handleAuthError('Invalid user data. Please log in again.');
           }
         } else {
-          console.log('Missing auth data:', { token, userData });
           handleAuthError('Authentication required. Please log in.');
         }
       } catch (error) {
-        console.error('AsyncStorage error:', error);
         handleAuthError('Failed to load user data. Please log in again.');
       }
     };
@@ -80,13 +74,7 @@ const UserFeedbackScreen = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setFeedbackList(response.data);
-      console.log('Feedback fetched:', response.data.length, 'items', response.data);
     } catch (error) {
-      console.error('Fetch feedback error:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-      });
       if (error.response?.status === 401 || error.response?.status === 404) {
         handleAuthError('Session expired or user not found. Please log in again.');
       } else {
@@ -107,7 +95,6 @@ const UserFeedbackScreen = () => {
         handleAuthError('Authentication token not found. Please log in again.');
       }
     } catch (error) {
-      console.error('Refresh feedback error:', error);
       Alert.alert('Error', 'Failed to refresh feedback. Please try again.');
     } finally {
       setRefreshing(false);
@@ -125,7 +112,6 @@ const UserFeedbackScreen = () => {
             <Image
               source={{ uri: item.userProfileImage }}
               style={styles.feedbackProfileImage}
-              onError={() => console.log('Failed to load profile image for:', item.userName)}
             />
           ) : (
             <Image
@@ -153,9 +139,14 @@ const UserFeedbackScreen = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar
+        style={isDarkMode ? "light" : "dark"}
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <LinearGradient
         colors={isDarkMode ? ['#1c1c1c', '#121212'] : ['#0d6efd', '#4682b4']}
-        style={styles.header}
+        style={[styles.header, { paddingTop: insets.top + 15 }]}
       >
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
           <FontAwesomeIcon icon={faArrowLeft} size={24} color="#fff" />
@@ -170,9 +161,6 @@ const UserFeedbackScreen = () => {
           renderItem={renderFeedbackItem}
           ListEmptyComponent={<Text style={styles.noFeedbackText}>No feedback available.</Text>}
           contentContainerStyle={styles.feedbackList}
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
-          windowSize={5}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -186,7 +174,7 @@ const UserFeedbackScreen = () => {
   );
 };
 
-const getStyles = (isDarkMode) =>
+const getStyles = (isDarkMode, insets) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -196,7 +184,6 @@ const getStyles = (isDarkMode) =>
       flexDirection: 'row',
       alignItems: 'center',
       padding: 15,
-      paddingTop: 40,
       borderBottomWidth: 0,
     },
     headerText: {

@@ -55,7 +55,7 @@ const NotificationPage = () => {
         animated={true}
       />
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <FontAwesomeIcon
             icon={faArrowLeft}
@@ -87,7 +87,6 @@ const NotificationPage = () => {
 const getStyles = (isDarkMode, insets) => StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: insets.top,
     backgroundColor: isDarkMode ? "#1c1c1c" : "white",
   },
   header: {

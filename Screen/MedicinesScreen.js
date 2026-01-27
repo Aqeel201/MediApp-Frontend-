@@ -216,8 +216,13 @@ const MedicineScreen = () => {
       colors={isDarkMode ? ['#121212', '#1c1c1c'] : ['#f8fafc', '#ffffff']}
       style={styles.container}
     >
+      <StatusBar
+        style={isDarkMode ? "light" : "dark"}
+        backgroundColor="transparent"
+        translucent={true}
+      />
       {/* Fixed Header */}
-      <View style={[styles.header, { marginTop: insets.top }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back" size={28} color={isDarkMode ? '#fff' : '#3b82f6'} />
         </TouchableOpacity>
@@ -361,7 +366,7 @@ const getStyles = (isDarkMode) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: 24,
+      paddingHorizontal: 24,
       paddingBottom: 16,
       borderBottomWidth: 1,
       borderBottomColor: isDarkMode ? '#2d2d2d' : '#e2e8f0',
