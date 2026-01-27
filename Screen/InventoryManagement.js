@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Footer from './Footer';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Button, Alert, SafeAreaView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Button, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const InventoryManagement = () => {
   const [medicines, setMedicines] = useState([
@@ -45,7 +46,7 @@ const InventoryManagement = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Inventory Management</Text>
-      
+
       <TextInput
         placeholder="Medicine Name"
         style={styles.input}
@@ -80,7 +81,7 @@ const InventoryManagement = () => {
         keyExtractor={item => item.id}
         style={styles.list}
       />
-           <Footer />
+      <Footer />
     </SafeAreaView>
   );
 };

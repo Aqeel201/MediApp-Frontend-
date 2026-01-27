@@ -8,7 +8,9 @@ import {
   Animated,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -16,17 +18,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from './ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { StatusBar } from 'expo-status-bar';
 
 const UserFeedbackScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
   const [feedbackList, setFeedbackList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current; // Animation for feedback items
 
-  const API_URL = 'http://192.168.18.24:2000/api/feedback';
-  const IMAGE_BASE_URL = 'http://192.168.18.24:3000/uploads/';
+  const API_URL = 'https://auth-backend-three-navy.vercel.app/api/feedback';
+  const IMAGE_BASE_URL = 'https://auth-backend-three-navy.vercel.app/uploads/';
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -119,7 +123,7 @@ const UserFeedbackScreen = () => {
         <View style={styles.feedbackHeader}>
           {item.userProfileImage ? (
             <Image
-              source={{ uri: `${IMAGE_BASE_URL}${item.userProfileImage}` }}
+              source={{ uri: item.userProfileImage }}
               style={styles.feedbackProfileImage}
               onError={() => console.log('Failed to load profile image for:', item.userName)}
             />
@@ -145,7 +149,7 @@ const UserFeedbackScreen = () => {
     </Animated.View>
   );
 
-  const styles = getStyles(isDarkMode);
+  const styles = getStyles(isDarkMode, insets);
 
   return (
     <View style={styles.container}>

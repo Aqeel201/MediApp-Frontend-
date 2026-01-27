@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
   FlatList,
   TouchableOpacity,
@@ -15,6 +14,7 @@ import {
   Image,
   ScrollView, // Added ScrollView import
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from './ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -51,11 +51,11 @@ const TransactionHistoryScreen = () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (!token || !userId) return;
-      
-      const response = await axios.get(`http://192.168.18.24:2000/api/transactions?userId=${userId}`, {
+
+      const response = await axios.get(`https://dashboard-backend-xrss.vercel.app/api/transactions?userId=${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (response.status === 200) {
         // Adjust based on your API response structure.
         const transactionsData = response.data.transactions || response.data || [];
@@ -102,8 +102,8 @@ const TransactionHistoryScreen = () => {
             item.status === 'Accepted'
               ? styles.statusSuccess
               : item.status === 'Rejected'
-              ? styles.statusError
-              : styles.statusWarning,
+                ? styles.statusError
+                : styles.statusWarning,
           ]}
         >
           {item.status}
@@ -122,7 +122,7 @@ const TransactionHistoryScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      
+
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -184,8 +184,8 @@ const TransactionHistoryScreen = () => {
                         selectedTransaction.status === 'Accepted'
                           ? styles.statusSuccess
                           : selectedTransaction.status === 'Rejected'
-                          ? styles.statusError
-                          : styles.statusWarning
+                            ? styles.statusError
+                            : styles.statusWarning
                       ]}>
                         {selectedTransaction.status}
                       </Text>

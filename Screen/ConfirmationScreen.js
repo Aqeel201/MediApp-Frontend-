@@ -2,13 +2,14 @@ import React, { useRef } from "react";
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
-  TouchableOpacity,
-  StatusBar,
-  Animated,
   ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
+  StatusBar,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E7EB",
     marginHorizontal: 4,
   },
-  
+
   animatedProgressLineFull: { height: 2, backgroundColor: "#007bff", width: "100%" },
   confirmationContainer: {
     flex: 1,

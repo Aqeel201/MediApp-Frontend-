@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from './ThemeContext';
 import { CartContext } from './CartContext';
 import NetInfo from '@react-native-community/netinfo';
@@ -17,6 +18,7 @@ import NetInfo from '@react-native-community/netinfo';
 const MedicineDescription = ({ route, navigation }) => {
   const { medicine } = route.params;
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
   const { addToCart, cartItems } = useContext(CartContext);
   const cartCount = cartItems ? cartItems.length : 0;
 
@@ -27,8 +29,8 @@ const MedicineDescription = ({ route, navigation }) => {
 
   const imageUrl = medicine.image
     ? medicine.image.startsWith('http')
-      ? medicine.image
-      : `http://192.168.18.24:2000${medicine.image}`
+      ? medicine.image.startsWith('http') ? medicine.image : `https://dashboard-backend-xrss.vercel.app${medicine.image}`
+      : `https://dashboard-backend-xrss.vercel.app${medicine.image}`
     : null;
 
   useEffect(() => {
@@ -92,7 +94,7 @@ const MedicineDescription = ({ route, navigation }) => {
         { backgroundColor: isDarkMode ? '#f0f4ff' : '#f0f4ff' },
       ]}
     >
-      <View style={[styles.headerContainer, { marginTop: 20 }]}>
+      <View style={[styles.headerContainer, { marginTop: insets.top }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={handleBackPress}

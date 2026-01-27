@@ -3,12 +3,14 @@ import { useNavigation } from "@react-navigation/native";
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
+  Image,
+  Alert,
   StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faArrowLeft, faBell } from "@fortawesome/free-solid-svg-icons";
 import FontAwesome from "react-native-vector-icons/FontAwesome";

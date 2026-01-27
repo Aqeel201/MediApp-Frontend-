@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -8,9 +8,8 @@ import { useTheme } from './ThemeContext';
 import * as Updates from 'expo-updates'; // Import expo-updates for app restart
 import Button from './Button'; // Assuming Button is a custom component
 
-const { width, height } = Dimensions.get('window');
-
 const ResetScreen = () => {
+  const { width, height } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const navigation = useNavigation();
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -23,12 +22,21 @@ const ResetScreen = () => {
     try {
       await AsyncStorage.removeItem('hasSeenOnboarding');
       console.log('Onboarding flag removed');
-      await Updates.reloadAsync(); // Restart the app
+      // Use setTimeout to ensure any state updates finish before reload
+      setTimeout(async () => {
+        try {
+          await Updates.reloadAsync();
+        } catch (e) {
+          console.error("Updates.reloadAsync failed:", e);
+        }
+      }, 500);
     } catch (error) {
       console.error('Error resetting onboarding:', error);
       Alert.alert('Error', 'Failed to reset onboarding. Please try again.');
     }
   };
+
+  const styles = React.useMemo(() => getStyles(width, height), [width, height]);
 
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? '#1c1c1c' : 'white' }]}>
@@ -80,7 +88,7 @@ const ResetScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (width, height) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: width * 0.05,

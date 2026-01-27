@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, TextInput, StyleSheet, Alert, ScrollView } from 'react-native';
 
 // Configure this to your backend
-const BASE_URL = 'http://192.168.18.24:2000'; // <- change to your backend host
+const BASE_URL = 'https://dashboard-backend-xrss.vercel.app'; // <- change to your backend host
 const MEDICINES_ENDPOINT = `${BASE_URL}/medicines`;
 const CHECK_ENDPOINT = `${BASE_URL}/api/check-interactions`;
 

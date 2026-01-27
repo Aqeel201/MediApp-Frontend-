@@ -1,20 +1,22 @@
 // NotificationPage.js
 import React from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  StatusBar,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { 
-  faArrowLeft, 
-  faBell, 
-  faHome, 
-  faShoppingBag, 
-  faUser 
+import {
+  faArrowLeft,
+  faBell,
+  faHome,
+  faShoppingBag,
+  faUser
 } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "./ThemeContext";
 import Footer from "./Footer"; // Import the reusable Footer component
@@ -40,27 +42,34 @@ const notifications = [
 const NotificationPage = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
 
-  const styles = getStyles(isDarkMode);
+  const styles = getStyles(isDarkMode, insets);
 
   return (
     <View style={styles.container}>
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent={true}
+        animated={true}
+      />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <FontAwesomeIcon 
-            icon={faArrowLeft} 
-            size={24} 
-            color={isDarkMode ? "white" : "#0d6efd"} 
+          <FontAwesomeIcon
+            icon={faArrowLeft}
+            size={24}
+            color={isDarkMode ? "white" : "#0d6efd"}
           />
         </TouchableOpacity>
         <Text style={styles.headerText}>Notifications</Text>
       </View>
-      
+
       <ScrollView style={styles.scrollView}>
         {notifications.map((notification) => (
-          <TouchableOpacity 
-            key={notification.id} 
+          <TouchableOpacity
+            key={notification.id}
             style={styles.notificationItem}
           >
             <Text style={styles.notificationTitle}>{notification.title}</Text>
@@ -68,16 +77,17 @@ const NotificationPage = () => {
           </TouchableOpacity>
         ))}
       </ScrollView>
-      
+
       {/* Reusable Modern Footer */}
       <Footer />
     </View>
   );
 };
 
-const getStyles = (isDarkMode) => StyleSheet.create({
+const getStyles = (isDarkMode, insets) => StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: insets.top,
     backgroundColor: isDarkMode ? "#1c1c1c" : "white",
   },
   header: {

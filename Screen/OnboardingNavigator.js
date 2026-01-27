@@ -1,13 +1,14 @@
 import React from 'react';
 import Onboarding from 'react-native-onboarding-swiper';
-import { Image, StyleSheet, Text, View, Dimensions, Animated, Easing } from 'react-native';
+import { Image, StyleSheet, Text, View, Animated, Easing, useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
+import { useNavigation } from '@react-navigation/native';
 
-const { width, height } = Dimensions.get('window');
-
-const OnboardingNavigator = ({ navigation }) => {
+const OnboardingNavigator = () => {
+  const { width, height } = useWindowDimensions();
+  const navigation = useNavigation();
   const completeOnboarding = async () => {
     try {
       await AsyncStorage.setItem('hasSeenOnboarding', 'true');
@@ -18,8 +19,8 @@ const OnboardingNavigator = ({ navigation }) => {
   };
 
   // Animation values
-  const scaleValue = new Animated.Value(0.8);
-  const opacityValue = new Animated.Value(0);
+  const scaleValue = React.useRef(new Animated.Value(0.8)).current;
+  const opacityValue = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     Animated.parallel([
@@ -36,6 +37,8 @@ const OnboardingNavigator = ({ navigation }) => {
       }),
     ]).start();
   }, []);
+
+  const styles = React.useMemo(() => getStyles(width, height), [width, height]);
 
   const renderImage = (source, isLottie = false) => {
     if (isLottie) {
@@ -107,8 +110,8 @@ const OnboardingNavigator = ({ navigation }) => {
             ),
           },
         ]}
-        onDone={completeOnboarding}
-        onSkip={completeOnboarding}
+        onDone={() => completeOnboarding()}
+        onSkip={() => completeOnboarding()}
         containerStyles={styles.container}
         titleStyles={styles.title}
         subtitleStyles={styles.subtitle}
@@ -140,7 +143,7 @@ const OnboardingNavigator = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (width = 375, height = 667) => StyleSheet.create({
   background: {
     flex: 1,
   },

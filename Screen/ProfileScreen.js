@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTheme } from "./ThemeContext";
+import Footer from "./Footer";
 
 import {
   View,
@@ -12,8 +13,10 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  StatusBar,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
   faAngleRight,
@@ -43,6 +46,7 @@ const ProfileScreen = () => {
   const [loadingUser, setLoadingUser] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   // Function to load user details from AsyncStorage
   const loadUserData = useCallback(async () => {
@@ -87,16 +91,23 @@ const ProfileScreen = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: isDarkMode ? "#1c1c1c" : "white" }]}>
+    <View style={[styles.container, { backgroundColor: isDarkMode ? "#1c1c1c" : "white", paddingTop: insets.top }]}>
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent={true}
+        animated={true}
+      />
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={styles.header}>
           <TouchableOpacity style={styles.iconButton}>
             <FontAwesomeIcon icon={faBars} size={24} color={isDarkMode ? "white" : "#0d6efd"} />
           </TouchableOpacity>
-          <Text style={[styles.headerText, { color: isDarkMode ? "white" : "#0d6efd" }, { marginTop: 20 }]}>Profile</Text>
+          <Text style={[styles.headerText, { color: isDarkMode ? "white" : "#0d6efd" }]}>Profile</Text>
           <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("NotificationPage")}>
             <FontAwesomeIcon icon={faBell} size={24} color={isDarkMode ? "white" : "#0d6efd"} />
           </TouchableOpacity>
@@ -107,14 +118,16 @@ const ProfileScreen = () => {
             <ActivityIndicator size="large" color={isDarkMode ? "white" : "#0d6efd"} />
           ) : (
             <>
-              <Image
-                source={
-                  userData && userData.profileImage
-                    ? { uri: `http://192.168.18.24:3000/uploads/${userData.profileImage}` }
-                    : require("../assets/default-profile.png")
-                }
-                style={styles.profilePic}
-              />
+              <TouchableOpacity onPress={() => navigation.navigate("PersonalData")}>
+                <Image
+                  source={
+                    userData && userData.profileImage
+                      ? { uri: userData.profileImage }
+                      : require("../assets/default-profile.png")
+                  }
+                  style={styles.profilePic}
+                />
+              </TouchableOpacity>
               <Text style={[styles.nameText, { color: isDarkMode ? "white" : "black" }]}>
                 {userData ? `${userData.firstName}${userData.lastName}` : "Guest"}
               </Text>
@@ -208,7 +221,7 @@ const ProfileScreen = () => {
         </View>
       </Modal>
 
-
+      <Footer />
     </View>
   );
 };
@@ -216,6 +229,9 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
+  scrollContent: {
+    paddingBottom: 90, // Space for the Footer
+  },
   header: {
     backgroundColor: "transparent",
     padding: 20,

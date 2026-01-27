@@ -3,12 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
+  TextInput, // Kept TextInput as it's used in the component
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Image,
+  ActivityIndicator, // Added as per instruction
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MedicineRecommendation = () => {
   const [disease, setDisease] = useState('');

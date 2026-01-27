@@ -3,18 +3,16 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
-  Linking,
-  Modal,
-  FlatList,
   TextInput,
-  ActivityIndicator,
-  RefreshControl,
+  Linking,
+  Platform,
+  Alert,
+  Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
   faEnvelope,
@@ -41,10 +39,10 @@ const HelpAndSupportScreen = () => {
   // Chatbot state
   const [isChatModalVisible, setIsChatModalVisible] = useState(false);
   const [messages, setMessages] = useState([
-    { 
-      id: "1", 
-      text: "Hello! I'm MediBot, your smart assistant for MediApp. How can I help you today?", 
-      sender: "bot" 
+    {
+      id: "1",
+      text: "Hello! I'm MediBot, your smart assistant for MediApp. How can I help you today?",
+      sender: "bot"
     },
   ]);
   const [inputText, setInputText] = useState("");
@@ -77,7 +75,7 @@ const HelpAndSupportScreen = () => {
 
   const handleSend = () => {
     if (!inputText.trim()) return;
-    
+
     // Add user message
     const userMessage = {
       id: Date.now().toString(),
@@ -121,10 +119,10 @@ const HelpAndSupportScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <FontAwesomeIcon 
-              icon={faArrowLeft} 
-              size={20} 
-              color={isDarkMode ? "#fff" : "#2f95dc"} 
+            <FontAwesomeIcon
+              icon={faArrowLeft}
+              size={20}
+              color={isDarkMode ? "#fff" : "#2f95dc"}
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Help & Support</Text>
@@ -143,50 +141,50 @@ const HelpAndSupportScreen = () => {
 
         {/* Quick Actions Grid */}
         <View style={styles.gridContainer}>
-          <TouchableOpacity 
-            style={styles.gridItem} 
+          <TouchableOpacity
+            style={styles.gridItem}
             onPress={() => navigation.navigate('FAQScreen')}
           >
-            <FontAwesomeIcon 
-              icon={faQuestionCircle} 
-              size={24} 
-              color="#2f95dc" 
+            <FontAwesomeIcon
+              icon={faQuestionCircle}
+              size={24}
+              color="#2f95dc"
             />
             <Text style={styles.gridText}>FAQs</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.gridItem}
             onPress={handleEmail}
           >
-            <FontAwesomeIcon 
-              icon={faEnvelope} 
-              size={24} 
-              color="#2f95dc" 
+            <FontAwesomeIcon
+              icon={faEnvelope}
+              size={24}
+              color="#2f95dc"
             />
             <Text style={styles.gridText}>Email Support</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.gridItem}
             onPress={() => setIsChatModalVisible(true)}
           >
-            <FontAwesomeIcon 
-              icon={faRobot} 
-              size={24} 
-              color="#2f95dc" 
+            <FontAwesomeIcon
+              icon={faRobot}
+              size={24}
+              color="#2f95dc"
             />
             <Text style={styles.gridText}>AI Assistant</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.gridItem}
             onPress={handlePhone}
           >
-            <FontAwesomeIcon 
-              icon={faPhone} 
-              size={24} 
-              color="#2f95dc" 
+            <FontAwesomeIcon
+              icon={faPhone}
+              size={24}
+              color="#2f95dc"
             />
             <Text style={styles.gridText}>Call Support</Text>
           </TouchableOpacity>
@@ -196,7 +194,7 @@ const HelpAndSupportScreen = () => {
         <View style={styles.knowledgeSection}>
           <Text style={styles.sectionTitle}>Popular Help Topics</Text>
           {Object.entries(chatbotKnowledge).map(([topic], index) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={index}
               style={styles.topicItem}
               onPress={() => {
@@ -209,10 +207,10 @@ const HelpAndSupportScreen = () => {
               }}
             >
               <Text style={styles.topicText}>{topic.charAt(0).toUpperCase() + topic.slice(1)}</Text>
-              <FontAwesomeIcon 
-                icon={faArrowLeft} 
-                size={16} 
-                color="#2f95dc" 
+              <FontAwesomeIcon
+                icon={faArrowLeft}
+                size={16}
+                color="#2f95dc"
                 style={{ transform: [{ rotate: '180deg' }] }}
               />
             </TouchableOpacity>
@@ -234,10 +232,10 @@ const HelpAndSupportScreen = () => {
           ]}>
             <View style={chatStyles.modalHeader}>
               <View style={chatStyles.botTitle}>
-                <FontAwesomeIcon 
-                  icon={faRobot} 
-                  size={20} 
-                  color="#2f95dc" 
+                <FontAwesomeIcon
+                  icon={faRobot}
+                  size={20}
+                  color="#2f95dc"
                 />
                 <Text style={[
                   chatStyles.modalTitle,
@@ -257,18 +255,18 @@ const HelpAndSupportScreen = () => {
             </View>
 
             <FlatList
-  data={messages}
-  renderItem={renderMessage}
-  keyExtractor={(item) => item.id}
-  contentContainerStyle={{ flexGrow: 1 }}
-/>
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ flexGrow: 1 }}
+            />
 
 
             <View style={chatStyles.inputWrapper}>
               <TextInput
                 style={[
                   chatStyles.input,
-                  { 
+                  {
                     backgroundColor: isDarkMode ? "#333" : "#f0f0f0",
                     color: isDarkMode ? "#fff" : "#000"
                   }
@@ -279,7 +277,7 @@ const HelpAndSupportScreen = () => {
                 onChangeText={setInputText}
                 onSubmitEditing={handleSend}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={chatStyles.sendButton}
                 onPress={handleSend}
               >
@@ -302,7 +300,7 @@ const HelpAndSupportScreen = () => {
         </View>
       </Modal>
 
-  
+
     </SafeAreaView>
   );
 };

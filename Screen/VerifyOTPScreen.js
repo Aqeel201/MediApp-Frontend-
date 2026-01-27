@@ -25,12 +25,16 @@ const VerifyOTPScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { email, purpose = 'signup' } = route.params;
-  const context = useTheme();
+  const { isDarkMode } = useTheme();
 
   const theme = {
     colors: {
       ...defaultTheme.colors,
-      ...(context?.theme?.colors || {}),
+      background: isDarkMode ? '#121212' : '#f8f9fa',
+      textPrimary: isDarkMode ? '#ffffff' : '#212529',
+      textSecondary: isDarkMode ? '#adb5bd' : '#495057',
+      inputBackground: isDarkMode ? '#2c2c2c' : '#ffffff',
+      inputBorder: isDarkMode ? '#495057' : '#dee2e6',
     }
   };
 
@@ -94,7 +98,7 @@ const VerifyOTPScreen = () => {
         ? { email: email.toLowerCase(), otp, newPassword }
         : { email: email.toLowerCase(), otp };
 
-      const response = await axios.post(`http://192.168.18.24:3000${endpoint}`, payload);
+      const response = await axios.post(`https://auth-backend-three-navy.vercel.app${endpoint}`, payload);
 
       console.log('Verify OTP response:', response.data);
 
@@ -130,7 +134,7 @@ const VerifyOTPScreen = () => {
     try {
       console.log('Resending OTP to:', email, 'Purpose:', purpose);
       const endpoint = purpose === 'password-reset' ? '/api/auth/request-password-reset' : '/api/auth/send-otp';
-      await axios.post(`http://192.168.18.24:3000${endpoint}`, {
+      await axios.post(`https://auth-backend-three-navy.vercel.app${endpoint}`, {
         email: email.toLowerCase()
       });
       Alert.alert('Success', 'OTP resent to your email.');

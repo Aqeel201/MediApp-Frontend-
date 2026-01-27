@@ -20,7 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 
 export default function MedicineReminderScreen() {
   const navigation = useNavigation();
-  const API_BASE = 'http://192.168.18.24:2000';
+  const API_BASE = 'https://dashboard-backend-xrss.vercel.app';
   const [authToken, setAuthToken] = useState(null);
   const [medicines, setMedicines] = useState([]);
   const [selectedMedicine, setSelectedMedicine] = useState('');

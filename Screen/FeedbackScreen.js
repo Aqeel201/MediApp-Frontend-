@@ -10,6 +10,7 @@ import {
   Animated,
   Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft, faStar } from '@fortawesome/free-solid-svg-icons';
@@ -18,10 +19,12 @@ import { useTheme } from './ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { CartContext } from './CartContext';
+import { StatusBar } from 'expo-status-bar';
 
 const FeedbackScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
   const { userId } = useContext(CartContext);
   const [feedback, setFeedback] = useState('');
   const [rating, setRating] = useState(0);
@@ -32,8 +35,8 @@ const FeedbackScreen = () => {
   const [profileImage, setProfileImage] = useState(null);
   const scaleAnim = useRef(new Animated.Value(1)).current; // Animation for submit button
 
-  const API_URL = 'http://192.168.18.24:2000/api/feedback';
-  const IMAGE_BASE_URL = 'http://192.168.18.24:3000/uploads/';
+  const API_URL = 'https://auth-backend-three-navy.vercel.app/api/feedback';
+  const IMAGE_BASE_URL = 'https://auth-backend-three-navy.vercel.app/uploads/';
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -141,7 +144,7 @@ const FeedbackScreen = () => {
     <FontAwesomeIcon icon={faStar} size={32} color={filled ? '#FFD700' : isDarkMode ? '#555' : '#ccc'} />
   );
 
-  const styles = getStyles(isDarkMode);
+  const styles = getStyles(isDarkMode, insets);
 
   return (
     <View style={styles.container}>
@@ -159,7 +162,7 @@ const FeedbackScreen = () => {
         <View style={styles.userInfoContainer}>
           {profileImage ? (
             <Image
-              source={{ uri: `${IMAGE_BASE_URL}${profileImage}` }}
+              source={{ uri: profileImage }}
               style={styles.profileImage}
               onError={() => setProfileImage(null)}
             />

@@ -1,27 +1,35 @@
 import { Dimensions, PixelRatio, Platform } from 'react-native';
 
-// Get device's screen dimensions
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
 // Define base dimensions (these are from a standard device, like iPhone 8, which has a width of 375 and height of 667)
 const baseWidth = 375;
 const baseHeight = 667;
 
+const getWindow = () => {
+  const win = Dimensions.get('window');
+  if (win && typeof win.width === 'number' && win.width > 0) {
+    return win;
+  }
+  return { width: baseWidth, height: baseHeight };
+};
+
 /**
  * Function to scale based on width of the screen
- * @param {number} size - The size you want to scale
  */
-const scale = (size) => (screenWidth / baseWidth) * size;
+const scale = (size) => {
+  const { width } = getWindow();
+  return (width / baseWidth) * size;
+};
 
 /**
  * Function to scale based on height of the screen
- * @param {number} size - The size you want to scale vertically
  */
-const verticalScale = (size) => (screenHeight / baseHeight) * size;
+const verticalScale = (size) => {
+  const { height } = getWindow();
+  return (height / baseHeight) * size;
+};
 
 /**
  * Function to normalize font sizes based on Pixel Ratio and device dimensions
- * @param {number} size - The size of the font you want to normalize
  */
 const normalizeFontSize = (size) => {
   const newSize = scale(size);
@@ -34,11 +42,10 @@ const normalizeFontSize = (size) => {
 
 /**
  * Responsive utility to be used globally in the app.
- * This object contains scaling methods and other platform-based checks.
  */
 export const responsive = {
-  width: screenWidth,
-  height: screenHeight,
+  get width() { return getWindow().width; },
+  get height() { return getWindow().height; },
   scale,
   verticalScale,
   normalizeFontSize,
@@ -47,8 +54,6 @@ export const responsive = {
 };
 
 // Event Listener for handling orientation changes or screen size changes
-Dimensions.addEventListener('change', ({ window: { width, height } }) => {
-  // Reassign width and height on orientation change
-  responsive.width = width;
-  responsive.height = height;
+Dimensions.addEventListener('change', () => {
+  // No need to manually reassign as we added getters
 });

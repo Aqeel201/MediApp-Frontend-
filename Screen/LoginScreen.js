@@ -13,19 +13,20 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from './ThemeContext';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import axios from 'axios';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { CartContext } from './CartContext';
-
-const { width, height } = Dimensions.get('window');
+import { Fingerprint } from 'lucide-react-native';
 
 const LoginScreen = () => {
+  const { width, height } = useWindowDimensions();
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
   const { refreshUser } = useContext(CartContext);
@@ -33,6 +34,8 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const [isBiometricsEnabled, setIsBiometricsEnabled] = useState(false);
 
   // Animated value for background image
   const animatedValue = useRef(new Animated.Value(0)).current;
@@ -52,7 +55,17 @@ const LoginScreen = () => {
         }),
       ])
     ).start();
-  }, [animatedValue]);
+
+    const checkBiometrics = async () => {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      setIsBiometricAvailable(hasHardware && isEnrolled);
+
+      const enabled = await AsyncStorage.getItem('isBiometricsEnabled');
+      setIsBiometricsEnabled(enabled === 'true');
+    };
+    checkBiometrics();
+  }, [animatedValue, width]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -63,7 +76,7 @@ const LoginScreen = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        'http://192.168.18.24:2000/api/auth/login',
+        'https://auth-backend-three-navy.vercel.app/api/auth/login',
         { email, password }
       );
       if (response.status === 200) {
@@ -93,7 +106,38 @@ const LoginScreen = () => {
     }
   };
 
-  const styles = getStyles(isDarkMode);
+  const handleBiometricLogin = async () => {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Login with Biometrics',
+        fallbackLabel: 'Enter Password',
+      });
+
+      if (result.success) {
+        setLoading(true);
+        // In a real app, you'd use a securely stored token or credentials.
+        // For this demo, we'll assume we can retrieve the last used user/token if they exist.
+        const storedToken = await AsyncStorage.getItem('authToken');
+        const storedUser = await AsyncStorage.getItem('user');
+
+        if (storedToken && storedUser) {
+          refreshUser && refreshUser();
+          Alert.alert('Success', 'Biometric Login successful.');
+          navigation.navigate('Home');
+        } else {
+          Alert.alert('Account Required', 'Please log in manually first to enable biometrics.');
+        }
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Biometric authentication error:', error);
+      Alert.alert('Error', 'Biometric authentication failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const styles = React.useMemo(() => getStyles(isDarkMode, width, height), [isDarkMode, width, height]);
 
   return (
     <View style={styles.container}>
@@ -109,11 +153,10 @@ const LoginScreen = () => {
 
       {/* Overlay with semi-transparent dark layer */}
       <View style={styles.overlay}>
-        {/* StatusBar for transparent overlay */}
         <StatusBar
           barStyle={isDarkMode ? 'light-content' : 'dark-content'}
           backgroundColor="transparent"
-          translucent hidden
+          translucent
         />
 
         <KeyboardAvoidingView
@@ -158,7 +201,6 @@ const LoginScreen = () => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
-                  textContentType="emailAddress"
                 />
               </View>
 
@@ -178,7 +220,6 @@ const LoginScreen = () => {
                   value={password}
                   onChangeText={setPassword}
                   autoCapitalize="none"
-                  textContentType="password"
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
@@ -212,6 +253,17 @@ const LoginScreen = () => {
                 )}
               </TouchableOpacity>
 
+              {isBiometricAvailable && isBiometricsEnabled && (
+                <TouchableOpacity
+                  style={styles.biometricButton}
+                  onPress={handleBiometricLogin}
+                  disabled={loading}
+                >
+                  <Fingerprint size={48} color="#0d6efd" />
+                  <Text style={styles.biometricText}>Use Biometrics</Text>
+                </TouchableOpacity>
+              )}
+
               {/* Signup Navigation */}
               <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
                 <Text style={styles.signupText}>
@@ -227,7 +279,7 @@ const LoginScreen = () => {
   );
 };
 
-const getStyles = (isDarkMode) =>
+const getStyles = (isDarkMode, width = 375, height = 667) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -277,7 +329,7 @@ const getStyles = (isDarkMode) =>
       fontWeight: '600',
       textAlign: 'center',
       marginBottom: 20,
-      color: isDarkMode ? '#bbb' : '#333',
+      color: '#333',
     },
     inputContainer: {
       flexDirection: 'row',
@@ -286,14 +338,14 @@ const getStyles = (isDarkMode) =>
       borderWidth: 1,
       borderColor: isDarkMode ? '#555' : '#ccc',
       borderRadius: 10,
-      backgroundColor: isDarkMode ? '#333' : '#fff',
+      backgroundColor: '#fff',
       paddingHorizontal: 10,
     },
     input: {
       flex: 1,
       height: 50,
       fontSize: 16,
-      color: isDarkMode ? '#fff' : '#333',
+      color: '#333',
     },
     inputIcon: {
       marginRight: 10,
@@ -321,13 +373,24 @@ const getStyles = (isDarkMode) =>
       fontWeight: '600',
     },
     signupText: {
-      color: isDarkMode ? '#fff' : '#333',
+      color: '#333',
       fontSize: 16,
       textAlign: 'center',
     },
     signupTextHighlight: {
       color: '#0d6efd',
       fontWeight: 'bold',
+    },
+    biometricButton: {
+      alignItems: 'center',
+      marginTop: 10,
+      marginBottom: 15,
+    },
+    biometricText: {
+      marginTop: 5,
+      color: '#0d6efd',
+      fontSize: 14,
+      fontWeight: '500',
     },
   });
 

@@ -1,15 +1,14 @@
 // Screen/TransactionResultScreen.js
 import React from "react";
 import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
   View,
   Text,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
-  StatusBar,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 const TransactionResult = () => {

@@ -1,18 +1,35 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal, FlatList, ScrollView, StatusBar } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ToggleSwitch from 'toggle-switch-react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faChevronDown, faUser, faSignOutAlt, faLanguage, faMapMarkerAlt, faLock, faArrowLeft, faTrash} from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faUser, faSignOutAlt, faLanguage, faMapMarkerAlt, faLock, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from './ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from './Button'; // Import the Button component
+import { Fingerprint, Bell, Moon, Sun, Languages, User, Lock, MapPin, Trash2, ArrowLeft } from 'lucide-react-native';
 
 const SettingsScreen = () => {
   const { isDarkMode, setIsDarkMode } = useTheme();
   const [isNotificationOn, setIsNotificationOn] = useState(false);
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('English');
+  const [isBiometricsEnabled, setIsBiometricsEnabled] = useState(false);
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+
+  React.useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const biometrics = await AsyncStorage.getItem('isBiometricsEnabled');
+        setIsBiometricsEnabled(biometrics === 'true');
+      } catch (error) {
+        console.error('Error loading biometric settings', error);
+      }
+    };
+    loadSettings();
+  }, []);
 
   const handleSave = () => {
     Alert.alert('Settings Saved', 'Your settings have been saved.');
@@ -28,65 +45,87 @@ const SettingsScreen = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: isDarkMode ? '#1c1c1c' : 'white' }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <FontAwesomeIcon icon={faArrowLeft} size={24} color={isDarkMode ? 'white' : '#0d6efd'} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Settings</Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: isDarkMode ? '#1c1c1c' : 'white', paddingTop: insets.top }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <ScrollView contentContainerStyle={[styles.scrollContainer, { paddingBottom: insets.bottom + 20 }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <ArrowLeft size={24} color={isDarkMode ? 'white' : '#0d6efd'} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Settings</Text>
+        </View>
 
-      <View style={styles.item}>
-        <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Enable Notifications</Text>
-        <ToggleSwitch
-          isOn={isNotificationOn}
-          onColor="green"
-          offColor="red"
-          labelStyle={{ color: isDarkMode ? 'white' : 'black' }}
-          size="medium"
-          onToggle={(isOn) => {
-            setIsNotificationOn(isOn);
-            console.log("Notification changed to: ", isOn);
-          }}
-        />
-      </View>
-      <View style={styles.item}>
-        <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Dark Mode</Text>
-        <ToggleSwitch
-          isOn={isDarkMode}
-          onColor="green"
-          offColor="red"
-          labelStyle={{ color: isDarkMode ? 'white' : 'black' }}
-          size="medium"
-          onToggle={(isOn) => {
-            setIsDarkMode(isOn);
-            console.log("Dark Mode changed to: ", isOn);
-          }}
-        />
-      </View>
-      <TouchableOpacity style={styles.item} onPress={() => setIsLanguageModalVisible(true)}>
-        <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Change Language</Text>
-        <FontAwesomeIcon icon={faChevronDown} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('PersonalData')}>
-        <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Update Profile</Text>
-        <FontAwesomeIcon icon={faUser} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('ChangePassword')}>
-        <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Change Password</Text>
-        <FontAwesomeIcon icon={faLock} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('MapLocation')}>
-        <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>View Cities Map</Text>
-        <FontAwesomeIcon icon={faMapMarkerAlt} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
-      </TouchableOpacity>
-              <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('Reset')}>
-          <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Reset Onboarding</Text>
-          <FontAwesomeIcon icon={faTrash} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+        <View style={styles.item}>
+          <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Enable Notifications</Text>
+          <ToggleSwitch
+            isOn={isNotificationOn}
+            onColor="green"
+            offColor="red"
+            labelStyle={{ color: isDarkMode ? 'white' : 'black' }}
+            size="medium"
+            onToggle={(isOn) => {
+              setIsNotificationOn(isOn);
+              console.log("Notification changed to: ", isOn);
+            }}
+          />
+        </View>
+        <View style={styles.item}>
+          <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Dark Mode</Text>
+          <ToggleSwitch
+            isOn={isDarkMode}
+            onColor="green"
+            offColor="red"
+            labelStyle={{ color: isDarkMode ? 'white' : 'black' }}
+            size="medium"
+            onToggle={(isOn) => {
+              setIsDarkMode(isOn);
+              console.log("Dark Mode changed to: ", isOn);
+            }}
+          />
+        </View>
+        <View style={styles.item}>
+          <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Biometric Authentication</Text>
+          <ToggleSwitch
+            isOn={isBiometricsEnabled}
+            onColor="green"
+            offColor="red"
+            labelStyle={{ color: isDarkMode ? 'white' : 'black' }}
+            size="medium"
+            onToggle={async (isOn) => {
+              try {
+                setIsBiometricsEnabled(isOn);
+                await AsyncStorage.setItem('isBiometricsEnabled', isOn.toString());
+                console.log("Biometric Auth changed to: ", isOn);
+              } catch (error) {
+                Alert.alert('Error', 'Failed to save biometric setting.');
+              }
+            }}
+          />
+        </View>
+        <TouchableOpacity style={styles.item} onPress={() => setIsLanguageModalVisible(true)}>
+          <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Change Language</Text>
+          <Languages size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
         </TouchableOpacity>
-      <Button title="Save Settings" onPress={handleSave} />
-      <Button title="Log Out" onPress={handleLogout} style={{ backgroundColor: 'red' }} />
+        <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('PersonalData')}>
+          <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Update Profile</Text>
+          <User size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('ChangePassword')}>
+          <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Change Password</Text>
+          <Lock size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('MapLocation')}>
+          <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>View Cities Map</Text>
+          <MapPin size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('Reset')}>
+          <Text style={[styles.text, { color: isDarkMode ? 'white' : '#0d6efd' }]}>Reset Onboarding</Text>
+          <Trash2 size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+        </TouchableOpacity>
+        <Button title="Save Settings" onPress={handleSave} />
+        <Button title="Log Out" onPress={handleLogout} style={{ backgroundColor: 'red' }} />
+      </ScrollView>
 
       {/* Language Modal */}
       <Modal
@@ -121,20 +160,22 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContainer: {
     padding: 20,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
+  },
+  backButton: {
+    padding: 5,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginLeft: 10,
-    alignItems: 'center',
-    flexDirection: 'row',
-    marginRight: 100,
+    marginLeft: 15,
   },
   item: {
     flexDirection: 'row',

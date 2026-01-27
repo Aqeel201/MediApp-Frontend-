@@ -29,11 +29,12 @@ import { useTheme } from './ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
+import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, CreditCard } from 'lucide-react-native';
 
 const PersonalDataScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
-  
+
   // State variables
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -61,7 +62,7 @@ const PersonalDataScreen = () => {
         setDob(user.dob || '');
         setProfileImage(
           user.profileImage
-            ? `http://192.168.18.24:3000/uploads/${user.profileImage}`
+            ? user.profileImage
             : null
         );
       }
@@ -92,7 +93,7 @@ const PersonalDataScreen = () => {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
@@ -108,24 +109,31 @@ const PersonalDataScreen = () => {
     try {
       const formData = new FormData();
       formData.append('firstName', firstName);
-      formData.append('lastName', lastName);
-      formData.append('CNICNo', CNICNo); // Append CNIC field
-      formData.append('phone', phone);
-      formData.append('address', address);
-      formData.append('dob', dob);
-      if (profileImage && profileImage.startsWith('file://')) {
-        const filename = profileImage.split('/').pop();
+      formData.append('lastName', lastName || '');
+      formData.append('CNICNo', CNICNo || ''); // Append CNIC field
+      formData.append('phone', phone || '');
+      formData.append('address', address || '');
+      formData.append('dob', dob || '');
+
+      if (profileImage && !profileImage.startsWith('http')) {
+        const filename = profileImage.split('/').pop() || 'profile.jpg';
         const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : 'image';
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
         formData.append('profileImage', {
           uri: profileImage,
           name: filename,
           type,
         });
       }
+      console.log('Sending update to Auth Backend:', {
+        firstName,
+        lastName: lastName || '',
+        CNICNo: CNICNo || '',
+        hasImage: !!profileImage
+      });
       const token = await AsyncStorage.getItem('authToken');
       const response = await axios.put(
-        'http://192.168.18.24:3000/api/auth/update',
+        'https://auth-backend-three-navy.vercel.app/api/auth/update',
         formData,
         {
           headers: {
@@ -138,7 +146,7 @@ const PersonalDataScreen = () => {
         Alert.alert('Data Saved', 'Your personal data has been updated.');
         await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
         if (response.data.user.profileImage) {
-          setProfileImage(`http://192.168.18.24:3000/uploads/${response.data.user.profileImage}`);
+          setProfileImage(response.data.user.profileImage);
         }
       } else {
         Alert.alert('Update Failed', response.data.message);
@@ -163,7 +171,7 @@ const PersonalDataScreen = () => {
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
-            <FontAwesomeIcon icon={faArrowLeft} size={24} color={isDarkMode ? 'white' : '#0d6efd'} />
+            <ArrowLeft size={24} color={isDarkMode ? 'white' : '#0d6efd'} />
           </TouchableOpacity>
           <Text style={[styles.headerText, { marginTop: 20 }]}>Personal Data</Text>
         </View>
@@ -173,7 +181,7 @@ const PersonalDataScreen = () => {
             {profileImage ? (
               <Image source={{ uri: profileImage }} style={styles.profilePic} />
             ) : (
-              <FontAwesomeIcon icon={faUser} size={80} color={isDarkMode ? 'white' : '#0d6efd'} />
+              <User size={80} color={isDarkMode ? 'white' : '#0d6efd'} />
             )}
             <Text style={styles.editText}>Edit Profile Picture</Text>
           </TouchableOpacity>
@@ -181,7 +189,7 @@ const PersonalDataScreen = () => {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <FontAwesomeIcon icon={faUser} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+            <User size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
             <TextInput
               style={styles.input}
               value={firstName}
@@ -202,7 +210,7 @@ const PersonalDataScreen = () => {
           </View>
           {/* CNIC Field */}
           <View style={styles.inputContainer}>
-            <FontAwesomeIcon icon={faIdCard} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+            <CreditCard size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
             <TextInput
               style={styles.input}
               value={CNICNo}
@@ -213,7 +221,7 @@ const PersonalDataScreen = () => {
             />
           </View>
           <View style={styles.inputContainer}>
-            <FontAwesomeIcon icon={faEnvelope} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+            <Mail size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
             <TextInput
               style={[styles.input, { color: 'gray' }]}
               value={email}
@@ -221,7 +229,7 @@ const PersonalDataScreen = () => {
             />
           </View>
           <View style={styles.inputContainer}>
-            <FontAwesomeIcon icon={faPhone} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+            <Phone size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
             <TextInput
               style={styles.input}
               value={phone}
@@ -232,7 +240,7 @@ const PersonalDataScreen = () => {
             />
           </View>
           <View style={styles.inputContainer}>
-            <FontAwesomeIcon icon={faMapMarkerAlt} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+            <MapPin size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
             <TextInput
               style={styles.input}
               value={address}
@@ -242,7 +250,7 @@ const PersonalDataScreen = () => {
             />
           </View>
           <View style={styles.inputContainer}>
-            <FontAwesomeIcon icon={faCalendar} size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
+            <Calendar size={20} color={isDarkMode ? 'white' : '#0d6efd'} />
             <TextInput
               style={styles.input}
               value={dob}

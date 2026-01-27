@@ -24,12 +24,16 @@ const defaultTheme = {
 
 const SignUpScreen = () => {
   const navigation = useNavigation();
-  const context = useTheme();
+  const { isDarkMode } = useTheme();
 
   const theme = {
     colors: {
       ...defaultTheme.colors,
-      ...(context?.theme?.colors || {}),
+      background: isDarkMode ? '#121212' : '#f8f9fa',
+      textPrimary: isDarkMode ? '#ffffff' : '#212529',
+      textSecondary: isDarkMode ? '#adb5bd' : '#495057',
+      inputBackground: isDarkMode ? '#2c2c2c' : '#ffffff',
+      inputBorder: isDarkMode ? '#495057' : '#dee2e6',
     }
   };
 
@@ -54,7 +58,7 @@ const SignUpScreen = () => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -90,29 +94,27 @@ const SignUpScreen = () => {
 
     setLoading(true);
     try {
-      const form = new FormData();
-      form.append('firstName', formData.firstName);
-      form.append('lastName', formData.lastName);
-      form.append('CNICNo', formData.CNICNo);
-      form.append('email', formData.email.toLowerCase());
-      form.append('password', formData.password);
+      const formDataToSend = new FormData();
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('CNICNo', formData.CNICNo);
+      formDataToSend.append('email', formData.email.toLowerCase());
+      formDataToSend.append('password', formData.password);
 
       if (profileImage) {
-        form.append('profileImage', {
+        const filename = profileImage.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image';
+        formDataToSend.append('profileImage', {
           uri: profileImage,
-          name: `profile_${Date.now()}.jpg`,
-          type: 'image/jpeg',
+          name: filename,
+          type,
         });
       }
 
-      console.log('Sending signup request:', {
-        firstName: formData.firstName,
-        email: formData.email.toLowerCase(),
-        hasPassword: !!formData.password,
-        hasImage: !!profileImage
-      });
+      console.log('Sending signup request (FormData)...');
 
-      const response = await axios.post('http://192.168.18.24:3000/api/auth/signup', form, {
+      const response = await axios.post('https://auth-backend-three-navy.vercel.app/api/auth/signup', formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 

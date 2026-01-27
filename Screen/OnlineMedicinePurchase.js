@@ -1,16 +1,19 @@
-import React, { useContext, useRef } from "react";
+import React, { useContext, useRef, useState } from "react";
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Image,
-  StatusBar,
+  TouchableOpacity,
+  ActivityIndicator,
+  TextInput,
+  Modal,
   Alert,
   Animated,
+  StatusBar,
 } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
@@ -24,9 +27,13 @@ import {
   faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { CartContext } from "./CartContext";
+import { useTheme } from "./ThemeContext";
+import Footer from "./Footer";
 
 const ProductCartScreen = () => {
   const navigation = useNavigation();
+  const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
   const { userId, cartItems, removeFromCart, updateQuantity } = useContext(CartContext);
 
   // Animated value for the progress line between Cart and Checkout
@@ -71,7 +78,7 @@ const ProductCartScreen = () => {
       useNativeDriver: false,
     }).start(async () => {
       try {
-        const response = await fetch("http://192.168.18.24:2000/api/cart", {
+        const response = await fetch("https://dashboard-backend-xrss.vercel.app/api/cart", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -89,18 +96,25 @@ const ProductCartScreen = () => {
     });
   };
 
+  const styles = getStyles(isDarkMode, insets);
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
+    <View style={styles.safeArea}>
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent={true}
+        animated={true}
+      />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <FontAwesomeIcon icon={faArrowLeft} size={24} color="#007bff" />
+          <FontAwesomeIcon icon={faArrowLeft} size={24} color={isDarkMode ? "#fff" : "#007bff"} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Your Cart</Text>
         <TouchableOpacity style={styles.iconButton}>
-          <FontAwesomeIcon icon={faBell} size={24} color="#007bff" />
+          <FontAwesomeIcon icon={faBell} size={24} color={isDarkMode ? "#fff" : "#007bff"} />
         </TouchableOpacity>
       </View>
 
@@ -130,7 +144,7 @@ const ProductCartScreen = () => {
         {/* Step 2: Checkout */}
         <View style={styles.progressStep}>
           <View style={[styles.progressCircle, styles.inactiveStep]}>
-            <FontAwesomeIcon icon={faCreditCard} size={20} color="#ccc" />
+            <FontAwesomeIcon icon={faCreditCard} size={20} color={isDarkMode ? "#555" : "#ccc"} />
           </View>
           <Text style={styles.progressText}>Checkout</Text>
         </View>
@@ -139,7 +153,7 @@ const ProductCartScreen = () => {
         {/* Step 3: Confirmation */}
         <View style={styles.progressStep}>
           <View style={[styles.progressCircle, styles.inactiveStep]}>
-            <FontAwesomeIcon icon={faCheckCircle} size={20} color="#ccc" />
+            <FontAwesomeIcon icon={faCheckCircle} size={20} color={isDarkMode ? "#555" : "#ccc"} />
           </View>
           <Text style={styles.progressText}>Confirmation</Text>
         </View>
@@ -149,16 +163,16 @@ const ProductCartScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {cartItems.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <FontAwesomeIcon icon={faShoppingCart} size={80} color="#e0e0e0" />
+            <FontAwesomeIcon icon={faShoppingCart} size={80} color={isDarkMode ? "#333" : "#e0e0e0"} />
             <Text style={styles.emptyText}>Your cart is empty</Text>
           </View>
         ) : (
           <>
             {/* Cart Items */}
             {cartItems.map((item) => {
-              const imageUrl = item.image?.startsWith("http")
+              const imageUrl = item.image && item.image.startsWith("http")
                 ? item.image
-                : `http://192.168.18.24:2000${item.image}`;
+                : `https://dashboard-backend-xrss.vercel.app${item.image}`;
 
               return (
                 <View key={item._id || item.id} style={styles.card}>
@@ -243,34 +257,36 @@ const ProductCartScreen = () => {
             </TouchableOpacity>
           </>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </ScrollView >
+      <Footer />
+    </View >
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode, insets) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: isDarkMode ? "#121212" : "#F9FAFB",
+    paddingTop: insets.top,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: isDarkMode ? "#333" : "#E5E7EB",
     elevation: 2,
     shadowColor: "#000",
-    shadowOpacity: 0.05,
+    shadowOpacity: isDarkMode ? 0.2 : 0.05,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: "600",
-    color: "#1F2937",
+    color: isDarkMode ? "#fff" : "#1F2937",
     letterSpacing: 0.5,
   },
   iconButton: {
@@ -281,9 +297,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: isDarkMode ? "#333" : "#E5E7EB",
   },
   progressStep: {
     alignItems: "center",
@@ -301,9 +317,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#007bff",
   },
   inactiveStep: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: isDarkMode ? "#2c2c2c" : "#F3F4F6",
     borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderColor: isDarkMode ? "#444" : "#E5E7EB",
   },
   progressTextActive: {
     fontSize: 14,
@@ -312,12 +328,12 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 14,
-    color: "#9CA3AF",
+    color: isDarkMode ? "#888" : "#9CA3AF",
   },
   progressLineContainer: {
     width: 60,
     height: 2,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: isDarkMode ? "#333" : "#E5E7EB",
     marginHorizontal: 4,
   },
   animatedProgressLine: {
@@ -327,11 +343,12 @@ const styles = StyleSheet.create({
   progressLine: {
     flex: 1,
     height: 2,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: isDarkMode ? "#333" : "#E5E7EB",
     marginHorizontal: 4,
   },
   scrollContainer: {
     padding: 20,
+    paddingBottom: 100, // Account for Footer
   },
   emptyContainer: {
     flex: 1,
@@ -341,12 +358,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: "#6B7280",
+    color: isDarkMode ? "#aaa" : "#6B7280",
     marginTop: 20,
     fontWeight: "500",
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -354,7 +371,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 2,
     shadowColor: "#000",
-    shadowOpacity: 0.05,
+    shadowOpacity: isDarkMode ? 0.2 : 0.05,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
@@ -368,13 +385,13 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 8,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: isDarkMode ? "#2c2c2c" : "#F3F4F6",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
   },
   placeholderText: {
-    color: "#9CA3AF",
+    color: isDarkMode ? "#888" : "#9CA3AF",
     fontSize: 12,
   },
   productInfo: {
@@ -383,12 +400,12 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1F2937",
+    color: isDarkMode ? "#fff" : "#1F2937",
     marginBottom: 4,
   },
   productDosage: {
     fontSize: 14,
-    color: "#6B7280",
+    color: isDarkMode ? "#aaa" : "#6B7280",
     marginBottom: 8,
   },
   priceQuantityContainer: {
@@ -404,19 +421,19 @@ const styles = StyleSheet.create({
   quantityControls: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: isDarkMode ? "#2c2c2c" : "#F3F4F6",
     borderRadius: 8,
     padding: 4,
   },
   quantityButton: {
     padding: 8,
     borderRadius: 6,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: isDarkMode ? "#3d3d3d" : "#E5E7EB",
   },
   quantityText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#1F2937",
+    color: isDarkMode ? "#fff" : "#1F2937",
     marginHorizontal: 12,
   },
   removeButton: {
@@ -426,20 +443,20 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   summaryCard: {
-    backgroundColor: "#fff",
+    backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
     borderRadius: 12,
     padding: 20,
     marginTop: 16,
     elevation: 2,
     shadowColor: "#000",
-    shadowOpacity: 0.05,
+    shadowOpacity: isDarkMode ? 0.2 : 0.05,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
   summaryTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1F2937",
+    color: isDarkMode ? "#fff" : "#1F2937",
     marginBottom: 16,
   },
   orderItemRow: {
@@ -449,16 +466,16 @@ const styles = StyleSheet.create({
   },
   orderItemName: {
     fontSize: 16,
-    color: "#1F2937",
+    color: isDarkMode ? "#ddd" : "#1F2937",
   },
   orderItemQuantity: {
     fontSize: 16,
-    color: "#1F2937",
+    color: isDarkMode ? "#fff" : "#1F2937",
     fontWeight: "500",
   },
   divider: {
     height: 1,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: isDarkMode ? "#333" : "#E5E7EB",
     marginVertical: 16,
   },
   summaryRow: {
@@ -468,11 +485,11 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 16,
-    color: "#6B7280",
+    color: isDarkMode ? "#aaa" : "#6B7280",
   },
   summaryValue: {
     fontSize: 16,
-    color: "#1F2937",
+    color: isDarkMode ? "#fff" : "#1F2937",
     fontWeight: "500",
   },
   totalRow: {
@@ -482,7 +499,7 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1F2937",
+    color: isDarkMode ? "#fff" : "#1F2937",
   },
   totalValue: {
     fontSize: 18,
@@ -499,6 +516,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
+    marginBottom: 30,
   },
   checkoutButtonText: {
     color: "#fff",
@@ -508,5 +526,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+
 
 export default ProductCartScreen;

@@ -4,11 +4,13 @@ import { GiftedChat, Bubble, InputToolbar, Day, Time } from 'react-native-gifted
 import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
-import { Audio } from 'expo-av';
+import { useAudioRecorder, Audio, setAudioModeAsync, requestRecordingPermissionsAsync } from 'expo-audio';
 import axios from 'axios';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Image as ImageIcon, Mic, Paperclip } from 'lucide-react-native';
 
-const SOCKET_URL = 'http://192.168.18.24:2000'; // Backend URL
+const VERCEL_URL = 'https://dashboard-backend-xrss.vercel.app';
+const LOCAL_URL = 'http://192.168.1.100:2000'; // Replace with your local IP
+const SOCKET_URL = VERCEL_URL; // Toggle here
 
 const Chat = ({ navigation }) => {
   const [messages, setMessages] = useState([]);
@@ -16,14 +18,20 @@ const Chat = ({ navigation }) => {
   const [userId, setUserId] = useState(null);
   const [authToken, setAuthToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [recording, setRecording] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const recorder = useAudioRecorder({
+    encoder: 'aac',
+    sampleRate: 44100,
+    bitRate: 128000,
+    channels: 2,
+  });
 
   useEffect(() => {
     const initChat = async () => {
       try {
         // Request audio permissions
-        const { status } = await Audio.requestPermissionsAsync();
+        const { status } = await requestRecordingPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permission Denied', 'Microphone permission is required for voice messages.');
         }
@@ -54,59 +62,82 @@ const Chat = ({ navigation }) => {
 
         const socketInstance = io(SOCKET_URL, {
           query: { token },
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionAttempts: 5,
         });
 
         console.log('Attempting to connect to:', SOCKET_URL, 'with token:', token);
 
         socketInstance.on('connect', () => {
           console.log('✅ Socket connected:', socketInstance.id);
+          setIsSocketConnected(true);
           socketInstance.emit('join', storedUserId);
         });
 
         socketInstance.on('connect_error', (err) => {
-          console.error('❌ Socket connection error:', err.message, err);
-          Alert.alert('Connection Error', `Failed to connect to chat server: ${err.message}`);
+          console.warn('❌ Socket connection error (expected on Vercel):', err.message);
+          setIsSocketConnected(false);
+          // Removed Alert to prevent spamming user on Vercel
         });
 
         socketInstance.on('error', (err) => {
           console.error('❌ Socket error:', err);
-          Alert.alert('Socket Error', 'An error occurred with the socket connection.');
+          setIsSocketConnected(false);
+        });
+
+        socketInstance.on('disconnect', () => {
+          console.log('❌ Socket disconnected');
+          setIsSocketConnected(false);
         });
 
         socketInstance.on('previousMessages', (previousMessages) => {
-          console.log('Received previous messages:', previousMessages);
+          console.log('Received previous messages (count):', previousMessages?.length);
+          if (!Array.isArray(previousMessages)) {
+            console.warn('previousMessages is not an array:', previousMessages);
+            return;
+          }
           const formattedMessages = previousMessages
             .map((msg) => {
-              if (!msg._id || !msg.timestamp || !msg.sender) {
-                console.warn('Skipping invalid message:', msg);
+              const msgId = msg._id || msg.id || Math.random().toString();
+              const timestamp = msg.timestamp || msg.createdAt || new Date().toISOString();
+              const senderId = msg.sender || msg.userId;
+
+              if (!senderId) {
+                console.warn('Skipping message without sender:', msg);
                 return null;
               }
+
               const message = {
-                _id: msg._id,
-                createdAt: new Date(msg.timestamp),
-                user: { _id: msg.sender === storedUserId ? 1 : 2, name: msg.sender === 'admin' ? 'Admin' : 'You' },
+                _id: msgId,
+                createdAt: new Date(timestamp),
+                user: {
+                  _id: senderId === storedUserId ? 1 : 2,
+                  name: senderId === 'admin' ? 'Admin' : 'You'
+                },
               };
+
               if (msg.type === 'text') {
-                message.text = msg.content;
+                message.text = msg.content || msg.text || '';
               } else if (msg.type === 'image') {
-                message.image = `${SOCKET_URL}${msg.content}`;
+                message.image = msg.content?.startsWith('http') ? msg.content : `${SOCKET_URL}${msg.content}`;
               } else if (msg.type === 'voice' || msg.type === 'document') {
-                message.text = `[${msg.type.toUpperCase()}] ${msg.content.split('/').pop()}`;
-                message.file = `${SOCKET_URL}${msg.content}`;
+                message.text = `[${msg.type.toUpperCase()}] ${msg.content?.split('/').pop() || 'File'}`;
+                message.file = msg.content?.startsWith('http') ? msg.content : `${SOCKET_URL}${msg.content}`;
               }
               return message;
             })
             .filter((msg) => msg !== null)
             .reverse();
-          console.log('Formatted messages:', formattedMessages);
+          console.log('Formatted messages (count):', formattedMessages.length);
           setMessages(formattedMessages);
         });
 
         socketInstance.on('receiveMessage', (msg) => {
           console.log('Received message:', JSON.stringify(msg, null, 2));
           const message = {
-            _id: msg._id,
-            createdAt: new Date(msg.timestamp),
+            _id: msg._id || Math.random().toString(),
+            createdAt: new Date(msg.timestamp || Date.now()),
             user: { _id: msg.sender === storedUserId ? 1 : 2, name: msg.sender === 'admin' ? 'Admin' : 'You' },
           };
           if (msg.type === 'text') {
@@ -128,13 +159,69 @@ const Chat = ({ navigation }) => {
           });
         });
 
+        // Initialize audio mode
+        await setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+
         setSocket(socketInstance);
         setIsLoading(false);
 
+        // Polling Fallback: Fetch messages every 5 seconds if socket is not connected or as a safety
+        const pollingInterval = setInterval(async () => {
+          if (!token || !storedUserId) return;
+          console.log('Polling for new messages...');
+          try {
+            const response = await axios.get(`${SOCKET_URL}/api/messages/admin`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.data && Array.isArray(response.data)) {
+              const fetchedMessages = response.data;
+              const formatted = fetchedMessages.map(msg => {
+                const msgId = msg._id || msg.id || Math.random().toString();
+                const timestamp = msg.timestamp || msg.createdAt || new Date().toISOString();
+                const senderId = msg.sender || msg.userId;
+
+                const message = {
+                  _id: msgId,
+                  createdAt: new Date(timestamp),
+                  user: {
+                    _id: senderId === storedUserId ? 1 : 2,
+                    name: senderId === 'admin' ? 'Admin' : 'You'
+                  },
+                };
+
+                if (msg.type === 'text') {
+                  message.text = msg.content || msg.text || '';
+                } else if (msg.type === 'image') {
+                  message.image = msg.content?.startsWith('http') ? msg.content : `${SOCKET_URL}${msg.content}`;
+                } else if (msg.type === 'voice' || msg.type === 'document') {
+                  message.text = `[${msg.type.toUpperCase()}] ${msg.content?.split('/').pop() || 'File'}`;
+                  message.file = msg.content?.startsWith('http') ? msg.content : `${SOCKET_URL}${msg.content}`;
+                }
+                return message;
+              });
+
+              setMessages(prev => {
+                const newMsgs = formatted.filter(m => !prev.some(p => p._id === m._id));
+                if (newMsgs.length > 0) {
+                  console.log(`Polling added ${newMsgs.length} new messages`);
+                  return GiftedChat.append(prev, newMsgs.reverse());
+                }
+                return prev;
+              });
+            }
+          } catch (error) {
+            console.warn('Polling failed:', error.message);
+          }
+        }, 5000);
+
         // Cleanup on unmount
         return () => {
-          console.log('Disconnecting socket');
+          console.log('Cleaning up chat resources');
           socketInstance.disconnect();
+          clearInterval(pollingInterval);
         };
       } catch (error) {
         console.error('Error initializing chat:', error);
@@ -154,21 +241,24 @@ const Chat = ({ navigation }) => {
         Alert.alert('Error', 'Unable to send message. Please try again.');
         return;
       }
-      newMessages.forEach((msg) => {
-        const message = {
-          sender: userId,
+      newMessages.forEach(async (msg) => {
+        const messageData = {
           receiver: 'admin',
           type: 'text',
           content: msg.text,
-          timestamp: new Date().toISOString(),
         };
-        console.log('Sending message:', JSON.stringify(message, null, 2));
-        socket.emit('sendMessage', message, (ack) => {
-          console.log('Server acknowledgment:', ack);
-          if (ack?.error) {
-            Alert.alert('Error', 'Failed to send message: ' + ack.error);
-          }
-        });
+
+        console.log('Sending message via POST:', JSON.stringify(messageData, null, 2));
+        try {
+          const response = await axios.post(`${SOCKET_URL}/api/chat/send`, messageData, {
+            headers: { Authorization: `Bearer ${authToken}` },
+          });
+          console.log('POST message response:', response.data);
+          // Socket will emit receiveMessage which will append to state
+        } catch (error) {
+          console.error('Failed to send message via POST:', error.message);
+          Alert.alert('Error', 'Failed to send message: ' + (error.response?.data?.error || error.message));
+        }
       });
     },
     [socket, userId]
@@ -178,8 +268,8 @@ const Chat = ({ navigation }) => {
     try {
       if (isRecording) return;
       console.log('Starting recording...');
-      const { recording: newRecording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      setRecording(newRecording);
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setIsRecording(true);
     } catch (err) {
       console.error('Failed to start recording:', err);
@@ -188,13 +278,16 @@ const Chat = ({ navigation }) => {
   };
 
   const stopRecording = async () => {
-    if (!recording || !isRecording) return;
+    if (!isRecording) return;
     console.log('Stopping recording...');
     try {
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
+      await recorder.stopAsync();
+      const uri = recorder.uri;
       setIsRecording(false);
-      setRecording(null);
+
+      if (!uri) {
+        throw new Error('Recording URI is null');
+      }
 
       // Send the recorded audio
       const formData = new FormData();
@@ -347,16 +440,16 @@ const Chat = ({ navigation }) => {
       renderActions={() => (
         <View style={styles.actionsContainer}>
           <TouchableOpacity onPress={() => pickFile('image')}>
-            <Icon name="image" size={24} color="#007AFF" />
+            <ImageIcon size={24} color="#007AFF" />
           </TouchableOpacity>
           <TouchableOpacity
             onPressIn={startRecording}
             onPressOut={stopRecording}
           >
-            <Icon name="mic" size={24} color={isRecording ? '#FF0000' : '#007AFF'} />
+            <Mic size={24} color={isRecording ? '#FF0000' : '#007AFF'} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => pickFile('document')}>
-            <Icon name="attach-file" size={24} color="#007AFF" />
+            <Paperclip size={24} color="#007AFF" />
           </TouchableOpacity>
         </View>
       )}
@@ -365,8 +458,15 @@ const Chat = ({ navigation }) => {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading chat...</Text>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <GiftedChat
+          messages={[]}
+          user={{ _id: 1 }}
+          renderInputToolbar={() => null}
+        />
+        <View style={StyleSheet.absoluteFill}>
+          <Text style={{ alignSelf: 'center', marginTop: '50%' }}>Loading chat...</Text>
+        </View>
       </View>
     );
   }

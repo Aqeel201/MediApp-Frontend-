@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons, Feather, Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from './ThemeContext';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,6 +22,7 @@ import { CartContext } from './CartContext';
 const MedicineScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
   const { cartItems } = useContext(CartContext);
   const cartCount = cartItems ? cartItems.length : 0;
 
@@ -57,7 +59,7 @@ const MedicineScreen = () => {
   const fetchMedicines = async () => {
     try {
       const config = authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : {};
-      const response = await axios.get('http://192.168.18.24:2000/medicines', config);
+      const response = await axios.get('https://dashboard-backend-xrss.vercel.app/medicines', config);
       setMedicines(response.data);
       setError(null);
     } catch (err) {
@@ -72,7 +74,7 @@ const MedicineScreen = () => {
   // Fetch categories from the API
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://192.168.18.24:2000/categories');
+      const response = await axios.get('https://dashboard-backend-xrss.vercel.app/categories');
       setCategories(response.data);
     } catch (err) {
       console.error('Failed to fetch categories:', err);
@@ -151,7 +153,7 @@ const MedicineScreen = () => {
         )
       );
       await axios.post(
-        `http://192.168.18.24:2000/medicines/${medicineId}/like`,
+        `https://dashboard-backend-xrss.vercel.app/medicines/${medicineId}/like`,
         {},
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
@@ -215,12 +217,12 @@ const MedicineScreen = () => {
       style={styles.container}
     >
       {/* Fixed Header */}
-      <View style={[styles.header, { marginTop: 20 }]}>
+      <View style={[styles.header, { marginTop: insets.top }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back" size={28} color={isDarkMode ? '#fff' : '#3b82f6'} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Medicines</Text>
-        
+
         <TouchableOpacity
           style={styles.cartButton}
           onPress={() => navigation.navigate('OnlineMedicinePurchase')}
@@ -265,14 +267,14 @@ const MedicineScreen = () => {
         keyExtractor={(item) => (item._id || item.id).toString()}
         renderItem={({ item }) => {
           const { status, color } = getStockStatus(item.quantity);
-          const imageUrl = item.image?.startsWith('http')
+          const imageUri = item.image && item.image.startsWith('http')
             ? item.image
-            : `http://192.168.18.24:2000${item.image}`;
+            : `https://dashboard-backend-xrss.vercel.app${item.image}`;
           return (
             <TouchableOpacity style={styles.medicineCard} onPress={() => handleMedicinePress(item)} activeOpacity={0.9}>
               <View style={styles.cardContent}>
                 {item.image ? (
-                  <Image source={{ uri: imageUrl }} style={styles.medicineImage} />
+                  <Image source={{ uri: imageUri }} style={styles.medicineImage} />
                 ) : (
                   <View style={styles.imagePlaceholder}>
                     <MaterialIcons name="medication" size={32} color={isDarkMode ? '#374151' : '#cbd5e1'} />

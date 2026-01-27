@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Animated, 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Backend URLs
-const BASE_URL = 'http://192.168.18.24:2000'; // change to your backend server
+const BASE_URL = 'https://dashboard-backend-xrss.vercel.app'; // change to your backend server
 const Q_ENDPOINT = `${BASE_URL}/api/game/question`;
 const ANSWER_ENDPOINT = `${BASE_URL}/api/game/answer`;
 const SCORE_ENDPOINT = (userId) => `${BASE_URL}/api/game/score/${userId}`;
@@ -207,10 +207,10 @@ const styles = StyleSheet.create({
   info: { alignItems: 'flex-end' },
   infoText: { color: '#444' },
   medicineCard: { backgroundColor: '#fff', padding: 12, borderRadius: 8, marginTop: 12, borderWidth: 1, borderColor: '#eee' },
-medicineTitle: { fontSize: 16, fontWeight: '700' },
-medicineDesc: { fontSize: 14, color: '#555', marginTop: 4 },
-card: { marginTop: 12, backgroundColor: '#fff', padding: 16, borderRadius: 10, elevation: 2 },
-qPrompt: { fontSize: 16, fontWeight: '600' },
+  medicineTitle: { fontSize: 16, fontWeight: '700' },
+  medicineDesc: { fontSize: 14, color: '#555', marginTop: 4 },
+  card: { marginTop: 12, backgroundColor: '#fff', padding: 16, borderRadius: 10, elevation: 2 },
+  qPrompt: { fontSize: 16, fontWeight: '600' },
   option: { marginTop: 12, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#eee', backgroundColor: '#fff' },
   optionText: { fontSize: 15 },
   optionSelected: { borderColor: '#2a9d8f', backgroundColor: '#eafaf6' },

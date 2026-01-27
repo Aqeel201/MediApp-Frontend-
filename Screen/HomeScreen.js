@@ -3,21 +3,21 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Dimensions,
   StatusBar,
   Animated,
   PanResponder,
   RefreshControl,
   Modal,
-  ImageBackground,
+  useWindowDimensions,
 } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from "@react-navigation/native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import * as Location from 'expo-location';
 import {
   faHome,
   faSearch,
@@ -51,11 +51,11 @@ import axios from "axios";
 import { useTheme } from "./ThemeContext";
 import Footer from "./Footer";
 
-const screenWidth = Dimensions.get("window").width;
-
 const HomeScreen = () => {
+  const { width: screenWidth } = useWindowDimensions();
   const navigation = useNavigation();
-  const { isDarkMode, setIsDarkMode } = useTheme();
+  const { isDarkMode, setIsDarkMode, toggleTheme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   // State Variables
   const [refreshing, setRefreshing] = useState(false);
@@ -70,11 +70,34 @@ const HomeScreen = () => {
   const pan = useRef(new Animated.Value(0)).current;
   const translateX = Animated.add(slideAnim, pan);
   const [showClinicModal, setShowClinicModal] = useState(false);
+  const [locationAddress, setLocationAddress] = useState("Locating...");
+
+  // Fetch Live Location
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationAddress("Permission Denied");
+        return;
+      }
+      try {
+        let location = await Location.getCurrentPositionAsync({});
+        let address = await Location.reverseGeocodeAsync(location.coords);
+        if (address && address.length > 0) {
+          const { city, country, region } = address[0];
+          const displayAddress = city || region;
+          setLocationAddress(`${displayAddress}, ${country}`);
+        }
+      } catch (error) {
+        setLocationAddress("Location Unavailable");
+      }
+    })();
+  }, []);
 
   // Data Fetching Functions
   const fetchMedicines = () => {
     axios
-      .get("http://192.168.18.24:2000/medicines")
+      .get("https://dashboard-backend-xrss.vercel.app/medicines")
       .then((res) => {
         setMedicines(res.data);
       })
@@ -83,7 +106,7 @@ const HomeScreen = () => {
 
   const fetchUserCount = () => {
     axios
-      .get("http://192.168.18.24:3000/api/usercount")
+      .get("https://auth-backend-three-navy.vercel.app/api/usercount")
       .then((res) => {
         setUserCount(res.data.count);
       })
@@ -231,226 +254,227 @@ const HomeScreen = () => {
     { icon: faQuestionCircle, label: "Help", screen: "HelpAndSupport" },
   ];
 
-  const styles = getStyles(isDarkMode);
+  const styles = React.useMemo(() => getStyles(isDarkMode, screenWidth, insets), [isDarkMode, screenWidth, insets]);
 
   return (
-    <ImageBackground
-      source={require("../assets/bg-pattern.jpeg")}
-      style={{ flex: 1 }}
-    >
-      <SafeAreaView style={styles.safeArea}>
-<StatusBar
-  barStyle={isDarkMode ? "light-content" : "dark-content"}
-  backgroundColor="transparent"
-  hidden={true}
-  translucent={true}
-  animated={true}
-/>
-        <View style={styles.container}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-                <FontAwesomeIcon icon={faHome} size={22} color="#007bff" />
-              </TouchableOpacity>
-              <View style={styles.locationContainer}>
-                <FontAwesomeIcon
-                  icon={faMapMarkerAlt}
-                  size={20}
-                  color="#007bff"
-                />
-                <Text style={styles.locationText}> Skardu, Pakistan</Text>
-              </View>
-              <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)}>
-                <FontAwesomeIcon
-                  icon={isDarkMode ? faMoon : faSun}
-                  size={22}
-                  color="#007bff"
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Title & Subtitle */}
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>Simplify Your Medicine Search</Text>
-              <Text style={styles.subtitle}>
-                Efficiently Find the Right Medications
-              </Text>
-            </View>
-
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <FontAwesomeIcon icon={faSearch} size={20} color="#007bff" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search to find your medicine"
-                placeholderTextColor={isDarkMode ? "#aaa" : "#666"}
-                value={searchText}
-                onChangeText={(text) => setSearchText(text)}
+    <View style={styles.mainContainer}>
+      <View style={styles.container}>
+        <StatusBar
+          barStyle={isDarkMode ? "light-content" : "dark-content"}
+          backgroundColor="transparent"
+          translucent={true}
+          animated={true}
+        />
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+              <FontAwesomeIcon icon={faHome} size={22} color="#007bff" />
+            </TouchableOpacity>
+            <View style={styles.locationContainer}>
+              <FontAwesomeIcon
+                icon={faMapMarkerAlt}
+                size={20}
+                color="#007bff"
               />
+              <Text style={styles.locationText}> {locationAddress}</Text>
             </View>
+            <TouchableOpacity onPress={toggleTheme}>
+              <FontAwesomeIcon
+                icon={isDarkMode ? faMoon : faSun}
+                size={22}
+                color="#007bff"
+              />
+            </TouchableOpacity>
+          </View>
 
-            {/* Search Results or Main Dashboard */}
-            {searchText.trim() !== "" ? (
-              <View style={styles.searchResultsContainer}>
-                {filteredMedicines.length > 0 ? (
-                  filteredMedicines.map((item) => (
-                    <TouchableOpacity
-                      key={item.id || item._id}
-                      style={styles.searchResultItem}
-                      onPress={() =>
-                        navigation.navigate("MedicineDetail", {
-                          medicine: item,
-                        })
-                      }
-                    >
-                      <Text style={styles.searchResultName}>{item.name}</Text>
-                      <Text style={styles.searchResultCategory}>
-                        {item.category}
-                      </Text>
-                    </TouchableOpacity>
-                  ))
-                ) : (
-                  <Text style={styles.noResultsText}>No results found.</Text>
-                )}
-              </View>
-            ) : (
-              <>
-                {/* Dashboard Overview */}
-                <Text style={styles.sectionTitle}>Dashboard Overview</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.dashboard}
+          {/* Title & Subtitle */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Simplify Your Medicine Search</Text>
+            <Text style={styles.subtitle}>
+              Efficiently Find the Right Medications
+            </Text>
+          </View>
+
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <FontAwesomeIcon icon={faSearch} size={20} color="#007bff" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search to find your medicine"
+              placeholderTextColor={isDarkMode ? "#aaa" : "#666"}
+              value={searchText}
+              onChangeText={(text) => setSearchText(text)}
+            />
+          </View>
+
+          {/* Search Results or Main Dashboard */}
+          {searchText.trim() !== "" ? (
+            <View style={styles.searchResultsContainer}>
+              {filteredMedicines.length > 0 ? (
+                filteredMedicines.map((item) => (
+                  <TouchableOpacity
+                    key={item.id || item._id}
+                    style={styles.searchResultItem}
+                    onPress={() =>
+                      navigation.navigate("MedicineDetail", {
+                        medicine: item,
+                      })
+                    }
+                  >
+                    <Text style={styles.searchResultName}>{item.name}</Text>
+                    <Text style={styles.searchResultCategory}>
+                      {item.category}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.noResultsText}>No results found.</Text>
+              )}
+            </View>
+          ) : (
+            <>
+              {/* Dashboard Overview */}
+              <Text style={styles.sectionTitle}>Dashboard Overview</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.dashboard}
+              >
+                <TouchableOpacity
+                  style={styles.dashboardItem}
+                  onPress={() => setShowClinicModal(true)}
                 >
-                  <TouchableOpacity
-                    style={styles.dashboardItem}
-                    onPress={() => setShowClinicModal(true)}
-                  >
-                    <FontAwesomeIcon
-                      icon={faClinicMedical}
-                      size={30}
-                      color="#007bff"
-                    />
-                    <View style={styles.dashboardTextContainer}>
-                      <Text style={styles.dashboardLabel}>Clinic Status</Text>
-                      <Text style={styles.dashboardValue}>{clinicStatus}</Text>
-                    </View>
-                  </TouchableOpacity>
-                  <View style={styles.dashboardItem}>
-                    <FontAwesomeIcon icon={faUsers} size={30} color="#007bff" />
-                    <View style={styles.dashboardTextContainer}>
-                      <Text style={styles.dashboardLabel}>
-                        Registered Users
-                      </Text>
-                      <Text style={styles.dashboardValue}>{userCount}</Text>
-                    </View>
+                  <FontAwesomeIcon
+                    icon={faClinicMedical}
+                    size={30}
+                    color="#007bff"
+                  />
+                  <View style={styles.dashboardTextContainer}>
+                    <Text style={styles.dashboardLabel}>Clinic Status</Text>
+                    <Text style={styles.dashboardValue}>{clinicStatus}</Text>
                   </View>
-                  <View style={styles.dashboardItem}>
-                    <FontAwesomeIcon icon={faBox} size={30} color="#007bff" />
-                    <View style={styles.dashboardTextContainer}>
-                      <Text style={styles.dashboardLabel}>Medicine Types</Text>
-                      <Text style={styles.dashboardValue}>
-                        {totalMedicineTypes}
-                      </Text>
-                    </View>
+                </TouchableOpacity>
+                <View style={styles.dashboardItem}>
+                  <FontAwesomeIcon icon={faUsers} size={30} color="#007bff" />
+                  <View style={styles.dashboardTextContainer}>
+                    <Text style={styles.dashboardLabel}>
+                      Registered Users
+                    </Text>
+                    <Text style={styles.dashboardValue}>{userCount}</Text>
                   </View>
-                </ScrollView>
+                </View>
+                <View style={styles.dashboardItem}>
+                  <FontAwesomeIcon icon={faBox} size={30} color="#007bff" />
+                  <View style={styles.dashboardTextContainer}>
+                    <Text style={styles.dashboardLabel}>Medicine Types</Text>
+                    <Text style={styles.dashboardValue}>
+                      {totalMedicineTypes}
+                    </Text>
+                  </View>
+                </View>
+              </ScrollView>
 
-                {/* Banner Slider */}
-                <View style={styles.banner} {...panResponder.panHandlers}>
-                  <Animated.View
-                    style={[
-                      styles.bannerImageContainer,
-                      {
-                        transform: [
-                          { translateX: translateX },
-                          { scale: scaleAnim },
-                        ],
-                        opacity: opacityAnim,
-                      },
-                    ]}
-                  >
-                    <Animated.Image
-                      source={banners[currentBannerIndex].image}
-                      style={styles.bannerImage}
-                      resizeMode="cover"
-                    />
-                    <Animated.View style={styles.bannerOverlay}>
-                      <Text style={styles.bannerText}>
-                        {banners[currentBannerIndex].text}
-                      </Text>
-                    </Animated.View>
+              {/* Banner Slider */}
+              <View style={styles.banner} {...panResponder.panHandlers}>
+                <Animated.View
+                  style={[
+                    styles.bannerImageContainer,
+                    {
+                      transform: [
+                        { translateX: translateX },
+                        { scale: scaleAnim },
+                      ],
+                      opacity: opacityAnim,
+                    },
+                  ]}
+                >
+                  <Animated.Image
+                    source={
+                      typeof banners[currentBannerIndex].image === 'string'
+                        ? {
+                          uri: banners[currentBannerIndex].image.startsWith('http')
+                            ? banners[currentBannerIndex].image
+                            : `https://dashboard-backend-xrss.vercel.app${banners[currentBannerIndex].image}`
+                        }
+                        : banners[currentBannerIndex].image
+                    }
+                    style={styles.bannerImage}
+                    resizeMode="cover"
+                  />
+                  <Animated.View style={styles.bannerOverlay}>
+                    <Text style={styles.bannerText}>
+                      {banners[currentBannerIndex].text}
+                    </Text>
                   </Animated.View>
-                </View>
+                </Animated.View>
+              </View>
 
-                {/* Top Categories */}
-                <Text style={styles.sectionTitle}>Top Categories</Text>
-                <View style={styles.categories}>
-                  {topCategories.map((category, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.category}
-                      onPress={() => navigation.navigate(category.screen)}
-                    >
-                      <View style={styles.categoryIconContainer}>
-                        <FontAwesomeIcon
-                          icon={category.icon}
-                          size={26}
-                          color="#007bff"
-                        />
-                      </View>
-                      <Text style={styles.categoryText}>{category.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* Features */}
-                <Text style={styles.sectionTitle}>Features</Text>
-                <View style={styles.features}>
-                  {features.map((feature, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.feature}
-                      onPress={() => navigation.navigate(feature.screen)}
-                    >
-                      <View style={styles.featureIconContainer}>
-                        <FontAwesomeIcon
-                          icon={feature.icon}
-                          size={26}
-                          color="#007bff"
-                        />
-                      </View>
-                      <Text style={styles.featureText}>{feature.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* Online Medicine Purchase */}
-                <Text style={styles.sectionTitle}>Order Medicines Online</Text>
-                <View style={styles.onlinePurchase}>
-                  <Text style={styles.onlinePurchaseText}>
-                    Order your medicines online and get them delivered right to
-                    your doorstep.
-                  </Text>
+              {/* Top Categories */}
+              <Text style={styles.sectionTitle}>Top Categories</Text>
+              <View style={styles.categories}>
+                {topCategories.map((category, index) => (
                   <TouchableOpacity
-                    style={styles.orderButton}
-                    onPress={() => navigation.navigate("Medicine")}
+                    key={index}
+                    style={styles.category}
+                    onPress={() => navigation.navigate(category.screen)}
                   >
-                    <Text style={styles.orderButtonText}>Order Now</Text>
+                    <View style={styles.categoryIconContainer}>
+                      <FontAwesomeIcon
+                        icon={category.icon}
+                        size={26}
+                        color="#007bff"
+                      />
+                    </View>
+                    <Text style={styles.categoryText}>{category.label}</Text>
                   </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </ScrollView>
+                ))}
+              </View>
 
-          <Footer />
-        </View>
+              {/* Features */}
+              <Text style={styles.sectionTitle}>Features</Text>
+              <View style={styles.features}>
+                {features.map((feature, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.feature}
+                    onPress={() => navigation.navigate(feature.screen)}
+                  >
+                    <View style={styles.featureIconContainer}>
+                      <FontAwesomeIcon
+                        icon={feature.icon}
+                        size={26}
+                        color="#007bff"
+                      />
+                    </View>
+                    <Text style={styles.featureText}>{feature.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Online Medicine Purchase */}
+              <Text style={styles.sectionTitle}>Order Medicines Online</Text>
+              <View style={styles.onlinePurchase}>
+                <Text style={styles.onlinePurchaseText}>
+                  Order your medicines online and get them delivered right to
+                  your doorstep.
+                </Text>
+                <TouchableOpacity
+                  style={styles.orderButton}
+                  onPress={() => navigation.navigate("Medicine")}
+                >
+                  <Text style={styles.orderButtonText}>Order Now</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </ScrollView>
+
+        <Footer />
 
         {/* Clinic Timing Modal */}
         <Modal
@@ -474,12 +498,12 @@ const HomeScreen = () => {
             </View>
           </View>
         </Modal>
-      </SafeAreaView>
-    </ImageBackground>
+      </View>
+    </View>
   );
 };
 
-const getStyles = (isDarkMode) =>
+const getStyles = (isDarkMode, screenWidth, insets) =>
   StyleSheet.create({
     element: {
       width: screenWidth, // Sets the width to the screen's width
@@ -490,13 +514,18 @@ const getStyles = (isDarkMode) =>
       flex: 1,
       backgroundColor: isDarkMode ? "#000" : "#f8f9fa",
     },
+    mainContainer: {
+      flex: 1,
+      backgroundColor: isDarkMode ? "#121212" : "#FFFFFF",
+    },
     container: {
       flex: 1,
       backgroundColor: "transparent",
+      paddingTop: insets.top,
     },
     scrollContainer: {
       padding: 20,
-      paddingBottom: 80,
+      paddingBottom: 100,
     },
     header: {
       flexDirection: "row",

@@ -51,7 +51,7 @@ const ChangePasswordScreen = () => {
     setLoading(true);
     try {
       console.log('Requesting password reset OTP for:', email);
-      const response = await axios.post('http://192.168.18.24:3000/api/auth/request-password-reset', {
+      const response = await axios.post('https://auth-backend-three-navy.vercel.app/api/auth/request-password-reset', {
         email: email.toLowerCase()
       });
 

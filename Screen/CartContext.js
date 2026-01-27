@@ -44,7 +44,7 @@ export const CartProvider = ({ children }) => {
 
   const fetchCartFromDB = async () => {
     try {
-      const response = await fetch(`http://192.168.73.221:2000/api/cart?userId=${userId}`);
+      const response = await fetch(`https://dashboard-backend-xrss.vercel.app/api/cart?userId=${userId}`);
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const data = await response.json();
@@ -65,7 +65,7 @@ export const CartProvider = ({ children }) => {
   const persistCart = async (newCart) => {
     if (!userId) return;
     try {
-      const response = await fetch("http://192.168.73.221:2000/api/cart", {
+      const response = await fetch("https://dashboard-backend-xrss.vercel.app/api/cart", {
         method: "POST", // Change to PUT if needed.
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, cart: newCart }),

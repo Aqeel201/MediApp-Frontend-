@@ -1,31 +1,31 @@
 // OrderHistoryScreen.js
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  SafeAreaView, 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
-  Dimensions, 
-  TextInput, 
-  StatusBar,
-  Modal,
+import {
+  View,
+  Text,
+  StyleSheet,
   ScrollView,
+  TouchableOpacity,
   Image,
-  RefreshControl
-} from 'react-native';
+  RefreshControl,
+  ActivityIndicator,
+  TextInput,
+  Modal,
+  FlatList,
+  StatusBar,
+  useWindowDimensions,
+} from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from './ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import moment from 'moment';
 
-const { width } = Dimensions.get('window');
-
 const OrderHistoryScreen = ({ navigation }) => {
+  const { width, height } = useWindowDimensions();
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
-  
+  const styles = React.useMemo(() => getStyles(isDarkMode, width, height), [isDarkMode, width, height]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState([]);
   const [userId, setUserId] = useState('');
@@ -49,8 +49,9 @@ const OrderHistoryScreen = ({ navigation }) => {
 
   // Function to fetch orders for the user
   const fetchOrders = async () => {
+    if (!userId) return;
     try {
-      const response = await fetch(`http://192.168.18.24:2000/api/order?userId=${userId}`);
+      const response = await fetch(`https://dashboard-backend-xrss.vercel.app/api/order?userId=${userId}`);
       const json = await response.json();
       if (json.orders) {
         setOrders(json.orders);
@@ -78,7 +79,7 @@ const OrderHistoryScreen = ({ navigation }) => {
 
   // Filter orders by searching for medicine names within cart items
   const filteredOrders = orders.filter(order =>
-    order.cartItems.some(item => 
+    order.cartItems && order.cartItems.some(item =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
@@ -88,6 +89,7 @@ const OrderHistoryScreen = ({ navigation }) => {
 
   // Helper: Determine badge color based on order status
   const getStatusColor = (status) => {
+    if (!status) return '#9E9E9E';
     switch (status.toLowerCase()) {
       case 'delivered': return '#4CAF50';
       case 'pending': return '#FF9800';
@@ -99,15 +101,15 @@ const OrderHistoryScreen = ({ navigation }) => {
   // Render each order item
   const renderItem = ({ item }) => {
     // Use the first medicine's image as a thumbnail (if available)
-    const firstMedicine = item.cartItems[0];
+    const firstMedicine = item.cartItems && item.cartItems[0];
     const imageUrl = firstMedicine && firstMedicine.image
       ? (firstMedicine.image.startsWith('http')
-          ? firstMedicine.image
-          : `http://192.168.18.24:2000${firstMedicine.image}`)
+        ? firstMedicine.image
+        : `https://dashboard-backend-xrss.vercel.app${firstMedicine.image}`)
       : null;
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={() => {
           setSelectedOrder(item);
           setModalVisible(true);
@@ -120,18 +122,18 @@ const OrderHistoryScreen = ({ navigation }) => {
             )}
             <View style={styles.orderDetails}>
               <View style={styles.orderHeader}>
-                <Text style={styles.orderId}>#{item._id.slice(-6).toUpperCase()}</Text>
+                <Text style={styles.orderId}>#{item._id ? item._id.slice(-6).toUpperCase() : 'N/A'}</Text>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                   <Text style={styles.statusText}>{item.status}</Text>
                 </View>
               </View>
               <View style={styles.medicinesContainer}>
-                {item.cartItems.slice(0, 2).map((medicine, index) => (
+                {item.cartItems && item.cartItems.slice(0, 2).map((medicine, index) => (
                   <Text key={index} style={styles.medicineText}>
                     {medicine.name} x{medicine.cartQuantity}
                   </Text>
                 ))}
-                {item.cartItems.length > 2 && (
+                {item.cartItems && item.cartItems.length > 2 && (
                   <Text style={styles.moreItemsText}>
                     and {item.cartItems.length - 2} more items...
                   </Text>
@@ -192,7 +194,7 @@ const OrderHistoryScreen = ({ navigation }) => {
           <View style={styles.modalContainer}>
             {selectedOrder && (
               <View style={styles.modalContent}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setModalVisible(false)}
                 >
@@ -201,10 +203,10 @@ const OrderHistoryScreen = ({ navigation }) => {
 
                 <ScrollView contentContainerStyle={styles.modalScroll}>
                   <Text style={styles.modalTitle}>Order Details</Text>
-                  
+
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Order ID:</Text>
-                    <Text style={styles.detailValue}>#{selectedOrder._id.slice(-6).toUpperCase()}</Text>
+                    <Text style={styles.detailValue}>#{selectedOrder._id ? selectedOrder._id.slice(-6).toUpperCase() : 'N/A'}</Text>
                   </View>
 
                   <View style={styles.detailRow}>
@@ -215,11 +217,11 @@ const OrderHistoryScreen = ({ navigation }) => {
                   </View>
 
                   <Text style={styles.sectionTitle}>Medicines</Text>
-                  {selectedOrder.cartItems.map((medicine, index) => (
+                  {selectedOrder.cartItems && selectedOrder.cartItems.map((medicine, index) => (
                     <View key={index} style={styles.medicineItem}>
                       {medicine.image && (
-                        <Image 
-                          source={{ uri: medicine.image.startsWith('http') ? medicine.image : `http://192.168.18.24:2000${medicine.image}` }}
+                        <Image
+                          source={{ uri: medicine.image && medicine.image.startsWith('http') ? medicine.image : `https://dashboard-backend-xrss.vercel.app${medicine.image}` }}
                           style={{ width: 50, height: 50, borderRadius: 5, marginRight: 10 }}
                         />
                       )}
@@ -227,7 +229,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                         <Text style={styles.medicineName}>{medicine.name}</Text>
                         <View style={styles.medicineDetails}>
                           <Text style={styles.medicineQty}>x{medicine.cartQuantity}</Text>
-                          <Text style={styles.medicinePrice}>Rs. {medicine.price.toFixed(2)}</Text>
+                          <Text style={styles.medicinePrice}>Rs. {medicine.price?.toFixed(2) || '0.00'}</Text>
                         </View>
                       </View>
                     </View>
@@ -235,7 +237,7 @@ const OrderHistoryScreen = ({ navigation }) => {
 
                   <View style={styles.totalContainer}>
                     <Text style={styles.totalLabel}>Total:</Text>
-                    <Text style={styles.totalAmount}>Rs. {selectedOrder.orderTotal?.toFixed(2)}</Text>
+                    <Text style={styles.totalAmount}>Rs. {selectedOrder.orderTotal?.toFixed(2) || '0.00'}</Text>
                   </View>
                 </ScrollView>
               </View>
@@ -247,7 +249,7 @@ const OrderHistoryScreen = ({ navigation }) => {
   );
 };
 
-const getStyles = (isDarkMode) => StyleSheet.create({
+const getStyles = (isDarkMode, width = 375, height = 667) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: isDarkMode ? '#000' : '#fff',
@@ -368,7 +370,7 @@ const getStyles = (isDarkMode) => StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    maxHeight: Dimensions.get('window').height * 0.9,
+    maxHeight: height * 0.9,
   },
   closeButton: {
     position: 'absolute',

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   View,
@@ -11,17 +10,17 @@ import {
   Image,
   Alert,
   Animated,
-  Dimensions,
   Modal,
+  useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Header from "./Header"; // Adjust path as needed
 
-const { width } = Dimensions.get("window");
-
 const DepositScreen = () => {
+  const { width } = useWindowDimensions();
   const navigation = useNavigation();
   const route = useRoute();
   const { orderData } = route.params || {};
@@ -41,8 +40,8 @@ const DepositScreen = () => {
       ? orderData.shippingMethod.toLowerCase() === "fast"
         ? "Fast Delivery"
         : orderData.shippingMethod.toLowerCase() === "standard"
-        ? "Standard Delivery"
-        : orderData.shippingMethod
+          ? "Standard Delivery"
+          : orderData.shippingMethod
       : "";
   const subtotal =
     orderData && typeof orderData.orderTotal === "number" && typeof orderData.shippingFee === "number"
@@ -124,7 +123,7 @@ const DepositScreen = () => {
     }
     try {
       // Ensure orderData includes an orderId for linking the transaction to an order.
-      const response = await axios.post("http://192.168.18.24:2000/api/transactions", {
+      const response = await axios.post("https://dashboard-backend-xrss.vercel.app/api/transactions", {
         userId,
         walletNumber,
         walletName,
@@ -152,7 +151,7 @@ const DepositScreen = () => {
     if (submittedTransaction) {
       interval = setInterval(async () => {
         try {
-          const res = await axios.get("http://192.168.18.24:2000/api/transactions", {
+          const res = await axios.get("https://dashboard-backend-xrss.vercel.app/api/transactions", {
             params: { userId },
           });
           const updatedTxn = res.data.find(

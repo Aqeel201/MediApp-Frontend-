@@ -3,7 +3,6 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -12,6 +11,7 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
@@ -38,7 +38,7 @@ const OnlineMedicinePurchase = () => {
     );
   }
 
-  const { cartItems = [], clearCart = () => {} } = cartContext;
+  const { cartItems = [], clearCart = () => { } } = cartContext;
 
   const [formData, setFormData] = useState({
     email: "",
@@ -172,11 +172,11 @@ const OnlineMedicinePurchase = () => {
     const billingAddress = formData.sameAsBilling
       ? shippingAddress
       : {
-          firstName: formData.billingFirstName,
-          lastName: formData.billingLastName,
-          streetAddress: formData.billingStreetAddress,
-          phoneNumber: formData.billingPhoneNumber,
-        };
+        firstName: formData.billingFirstName,
+        lastName: formData.billingLastName,
+        streetAddress: formData.billingStreetAddress,
+        phoneNumber: formData.billingPhoneNumber,
+      };
 
     const orderData = {
       userId: formData.email,
@@ -197,7 +197,7 @@ const OnlineMedicinePurchase = () => {
       useNativeDriver: false,
     }).start(async () => {
       try {
-        const response = await fetch("http://192.168.18.24:2000/api/order", {
+        const response = await fetch("https://dashboard-backend-xrss.vercel.app/api/order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(orderData),

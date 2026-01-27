@@ -35,8 +35,16 @@ const Footer = () => {
         console.error("Error loading user data", error);
       }
     };
+
     loadUserData();
-  }, []);
+
+    // Add navigation listener to refresh user data when screen is focused
+    const unsubscribe = navigation.addListener("focus", () => {
+      loadUserData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <View style={styles.footer}>
@@ -76,7 +84,7 @@ const Footer = () => {
           {userData && userData.profileImage ? (
             <Image
               source={{
-                uri: `http://192.168.18.24:3000/uploads/${userData.profileImage}`,
+                uri: userData.profileImage,
               }}
               style={styles.profilePic}
             />
