@@ -32,6 +32,13 @@
     "plugins": [
       "expo-audio",
       "expo-video",
+      "lottie-react-native",
+      [
+        "react-native-maps",
+        {
+          "androidApiKey": ""
+        }
+      ],
       [
         "@stripe/stripe-react-native",
         {
