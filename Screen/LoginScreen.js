@@ -16,6 +16,7 @@ import {
   StatusBar,
   useWindowDimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from './ThemeContext';
@@ -138,52 +139,65 @@ const LoginScreen = () => {
     }
   };
 
-  const styles = React.useMemo(() => getStyles(isDarkMode, width, height), [isDarkMode, width, height]);
+  const styles = React.useMemo(() => getStyles(width, height, isDarkMode), [width, height, isDarkMode]);
 
   return (
     <View style={styles.container}>
-      {/* Background Image */}
-      <Animated.Image
-        source={require('../assets/backround2.jpg')}
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+      {/* Background Animated Images */}
+      <Animated.View
         style={[
-          styles.backgroundImage,
-          { transform: [{ translateX: animatedValue }] },
+          styles.backgroundContainer,
+          {
+            transform: [{ translateX: animatedValue }],
+          },
         ]}
-        resizeMode="cover"
-      />
-
-      {/* Overlay with semi-transparent dark layer */}
-      <View style={styles.overlay}>
-        <StatusBar
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-          backgroundColor="transparent"
-          translucent
+      >
+        <Image
+          source={require('../assets/backround2.jpg')}
+          style={[styles.backgroundImage, { width: width }]}
+          resizeMode="cover"
         />
+        <Image
+          source={require('../assets/backround2.jpg')}
+          style={[styles.backgroundImage, { width: width }]}
+          resizeMode="cover"
+        />
+      </Animated.View>
 
-        <KeyboardAvoidingView
-          style={styles.keyboardAvoiding}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={
-            Platform.OS === 'ios' ? 0 : StatusBar.currentHeight || 0
-          }
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoiding}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={styles.scrollContainer}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Logo Section */}
-            <View style={styles.logoContainer}>
-              <Image
-                source={require('../assets/Logo.png')}
-                style={styles.logo}
-              />
-              <Text style={styles.logoText}>MediApp</Text>
+          <View style={styles.overlay}>
+            <View style={styles.header}>
+              <View style={styles.logoWrapper}>
+                <Image
+                  source={require('../assets/LogoBGR.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
+              <LinearGradient
+                colors={['#fff', 'rgba(255,255,255,0.7)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.titleGradient}
+              >
+                <Text style={styles.titleText}>Welcome Back</Text>
+              </LinearGradient>
+              <Text style={styles.subtitle}>Sign in to continue your journey</Text>
             </View>
 
             {/* Form Container */}
             <View style={styles.formContainer}>
-              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={[styles.formTitle, { marginBottom: 20 }]}>Sign In</Text>
 
               {/* Email Input */}
               <View style={styles.inputContainer}>
@@ -271,127 +285,166 @@ const LoginScreen = () => {
                 </Text>
               </TouchableOpacity>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
 
-const getStyles = (isDarkMode, width = 375, height = 667) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: 'transparent',
-    },
-    backgroundImage: {
-      position: 'absolute',
-      width: width * 2,
-      height: height,
-    },
-    overlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.6)',
-    },
-    keyboardAvoiding: {
-      flex: 1,
-    },
-    scrollContainer: {
-      flexGrow: 1,
-      justifyContent: 'center',
-      paddingHorizontal: wp(6),
-      paddingBottom: hp(5),
-    },
-    logoContainer: {
-      alignItems: 'center',
-      marginBottom: hp(2),
-    },
-    logo: {
-      width: wp(20),
-      height: wp(20),
-      marginBottom: hp(1),
-      borderRadius: wp(4),
-    },
-    logoText: {
-      fontSize: fontSize(28),
-      fontWeight: 'bold',
-      color: '#fff',
-    },
-    formContainer: {
-      width: '100%',
-      backgroundColor: 'rgba(255,255,255,0.95)',
-      padding: wp(6),
-      borderRadius: wp(3),
-    },
-    title: {
-      fontSize: fontSize(22),
-      fontWeight: '600',
-      textAlign: 'center',
-      marginBottom: hp(2),
-      color: '#333',
-    },
-    inputContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: hp(2),
-      borderWidth: 1,
-      borderColor: isDarkMode ? '#555' : '#ccc',
-      borderRadius: 10,
-      backgroundColor: '#fff',
-      paddingHorizontal: wp(3),
-    },
-    input: {
-      flex: 1,
-      height: hp(6.5),
-      fontSize: fontSize(16),
-      color: '#333',
-    },
-    inputIcon: {
-      marginRight: 10,
-    },
-    togglePassword: {
-      padding: 10,
-    },
-    forgotPasswordText: {
-      color: '#0d6efd',
-      fontSize: fontSize(16),
-      textAlign: 'right',
-      marginBottom: hp(2.5),
-    },
-    loginButton: {
-      backgroundColor: '#0d6efd',
-      height: hp(6.5),
-      borderRadius: wp(3),
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: hp(2),
-    },
-    loginButtonText: {
-      color: '#fff',
-      fontSize: 18,
-      fontWeight: '600',
-    },
-    signupText: {
-      color: '#333',
-      fontSize: fontSize(16),
-      textAlign: 'center',
-    },
-    signupTextHighlight: {
-      color: '#0d6efd',
-      fontWeight: 'bold',
-      fontSize: fontSize(16),
-    },
-    biometricButton: {
-      alignItems: 'center',
-      marginTop: 10,
-      marginBottom: 15,
-    },
-    biometricText: {
-      marginTop: 5,
-      color: '#0d6efd',
-      fontSize: 14,
-      fontWeight: '500',
-    },
-  });
+const getStyles = (width, height, isDarkMode) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  keyboardAvoiding: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  backgroundContainer: {
+    position: 'absolute',
+    flexDirection: 'row',
+    height: '100%',
+    width: width * 2,
+  },
+  backgroundImage: {
+    height: '100%',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: hp(4),
+    marginTop: hp(5),
+  },
+  logoWrapper: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 25,
+    marginBottom: hp(2),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logo: {
+    width: wp(18),
+    height: wp(18),
+  },
+  titleGradient: {
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 10,
+    marginBottom: 5,
+  },
+  titleText: {
+    fontSize: fontSize(30),
+    fontWeight: '900',
+    color: '#0d6efd',
+    letterSpacing: 1,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: fontSize(16),
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 5,
+  },
+  formContainer: {
+    width: '90%',
+    backgroundColor: isDarkMode ? 'rgba(25, 25, 25, 0.85)' : 'rgba(255, 255, 255, 0.92)',
+    padding: wp(8),
+    borderRadius: 30,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.5)',
+  },
+  formTitle: {
+    fontSize: fontSize(24),
+    fontWeight: '700',
+    color: isDarkMode ? '#fff' : '#1a1a1a',
+    marginBottom: hp(3),
+    textAlign: 'center',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: hp(2.5),
+    borderWidth: 1.5,
+    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+    borderRadius: 15,
+    backgroundColor: isDarkMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.8)',
+    paddingHorizontal: wp(4),
+    height: hp(7),
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: fontSize(16),
+    color: isDarkMode ? '#fff' : '#1a1a1a',
+    height: '100%',
+  },
+  togglePassword: {
+    padding: 10,
+  },
+  forgotPasswordText: {
+    color: '#0d6efd',
+    fontSize: fontSize(14),
+    fontWeight: '600',
+    textAlign: 'right',
+    marginBottom: hp(3),
+  },
+  loginButton: {
+    backgroundColor: '#0d6efd',
+    height: hp(7),
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: hp(2.5),
+    shadowColor: '#0d6efd',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: fontSize(18),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  biometricButton: {
+    alignItems: 'center',
+    marginBottom: hp(2),
+  },
+  biometricText: {
+    marginTop: 8,
+    color: '#0d6efd',
+    fontSize: fontSize(14),
+    fontWeight: '600',
+  },
+  signupText: {
+    color: isDarkMode ? '#aaa' : '#666',
+    fontSize: fontSize(15),
+    textAlign: 'center',
+    marginTop: hp(1),
+  },
+  signupTextHighlight: {
+    color: '#0d6efd',
+    fontWeight: '800',
+  },
+});
 
 export default LoginScreen;

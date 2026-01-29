@@ -9,6 +9,8 @@ import {
   StatusBar,
   Alert,
   Modal,
+  Animated,
+  ScrollView,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +32,7 @@ const OnlineMedicinePurchase = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode, insets);
   const cartContext = useContext(CartContext);
 
   if (!cartContext) {
@@ -510,6 +513,11 @@ const OnlineMedicinePurchase = () => {
             </>
           )}
         </View>
+
+        {/* Place Order Button */}
+        <TouchableOpacity style={styles.placeOrderButton} onPress={handleSubmit}>
+          <Text style={styles.placeOrderText}>Place Order</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Map Modal */}
@@ -537,7 +545,7 @@ const OnlineMedicinePurchase = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode = false, insets = { top: 0, bottom: 0 }) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: isDarkMode ? "#121212" : "#F9FAFB" },
   header: {
     flexDirection: "row",

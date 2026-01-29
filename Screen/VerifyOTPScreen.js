@@ -38,6 +38,8 @@ const VerifyOTPScreen = () => {
     }
   };
 
+  const styles = React.useMemo(() => getStyles(theme, isDarkMode), [isDarkMode]);
+
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -152,35 +154,35 @@ const VerifyOTPScreen = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles(theme).container}
+      style={styles.container}
     >
       <ScrollView
-        contentContainerStyle={styles(theme).scrollContainer}
+        contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles(theme).header}>
+        <View style={styles.header}>
           <Image
             source={require('../assets/LogoBGR.png')}
-            style={styles(theme).logo}
+            style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles(theme).title}>
+          <Text style={styles.title}>
             {purpose === 'password-reset' ? 'Reset Your Password' : 'Verify Your Email'}
           </Text>
-          <Text style={styles(theme).subtitle}>
+          <Text style={styles.subtitle}>
             Enter the 6-digit OTP sent to {email}
           </Text>
         </View>
 
-        <View style={styles(theme).formContainer}>
-          <View style={styles(theme).inputWrapper}>
+        <View style={styles.formContainer}>
+          <View style={styles.inputWrapper}>
             <FontAwesome
               name="lock"
               size={18}
-              style={styles(theme).icon}
+              style={styles.icon}
             />
             <TextInput
-              style={styles(theme).input}
+              style={styles.input}
               placeholder="Enter OTP"
               placeholderTextColor={theme.colors.textSecondary}
               value={otp}
@@ -194,14 +196,14 @@ const VerifyOTPScreen = () => {
 
           {purpose === 'password-reset' && (
             <>
-              <View style={styles(theme).inputWrapper}>
+              <View style={styles.inputWrapper}>
                 <FontAwesome
                   name="lock"
                   size={18}
-                  style={styles(theme).icon}
+                  style={styles.icon}
                 />
                 <TextInput
-                  style={styles(theme).input}
+                  style={styles.input}
                   placeholder="New Password *"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={newPassword}
@@ -210,7 +212,7 @@ const VerifyOTPScreen = () => {
                   autoCapitalize="none"
                 />
                 <TouchableOpacity
-                  style={styles(theme).eyeIcon}
+                  style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
                 >
                   <FontAwesome
@@ -221,14 +223,14 @@ const VerifyOTPScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              <View style={styles(theme).inputWrapper}>
+              <View style={styles.inputWrapper}>
                 <FontAwesome
                   name="lock"
                   size={18}
-                  style={styles(theme).icon}
+                  style={styles.icon}
                 />
                 <TextInput
-                  style={styles(theme).input}
+                  style={styles.input}
                   placeholder="Confirm New Password *"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={confirmPassword}
@@ -237,7 +239,7 @@ const VerifyOTPScreen = () => {
                   autoCapitalize="none"
                 />
                 <TouchableOpacity
-                  style={styles(theme).eyeIcon}
+                  style={styles.eyeIcon}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   <FontAwesome
@@ -253,8 +255,8 @@ const VerifyOTPScreen = () => {
 
         <TouchableOpacity
           style={[
-            styles(theme).submitButton,
-            loading && styles(theme).disabledButton
+            styles.submitButton,
+            loading && styles.disabledButton
           ]}
           onPress={handleVerifyOTP}
           disabled={loading}
@@ -263,7 +265,7 @@ const VerifyOTPScreen = () => {
           {loading ? (
             <ActivityIndicator size="small" color={theme.colors.background} />
           ) : (
-            <Text style={styles(theme).buttonText}>
+            <Text style={styles.buttonText}>
               {purpose === 'password-reset' ? 'Reset Password' : 'Verify OTP'}
             </Text>
           )}
@@ -271,21 +273,21 @@ const VerifyOTPScreen = () => {
 
         <TouchableOpacity
           style={[
-            styles(theme).resendButton,
-            (loading || resendDisabled) && styles(theme).disabledButton
+            styles.resendButton,
+            (loading || resendDisabled) && styles.disabledButton
           ]}
           onPress={handleResendOTP}
           disabled={loading || resendDisabled}
           activeOpacity={0.9}
         >
-          <Text style={styles(theme).resendText}>
+          <Text style={styles.resendText}>
             {resendDisabled ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
           </Text>
         </TouchableOpacity>
 
-        <View style={styles(theme).backContainer}>
+        <View style={styles.backContainer}>
           <TouchableOpacity onPress={() => navigation.navigate(purpose === 'password-reset' ? 'ChangePassword' : 'Signup')}>
-            <Text style={styles(theme).backLink}>
+            <Text style={styles.backLink}>
               {purpose === 'password-reset' ? 'Back to Change Password' : 'Back to Sign Up'}
             </Text>
           </TouchableOpacity>
@@ -295,7 +297,7 @@ const VerifyOTPScreen = () => {
   );
 };
 
-const styles = (theme = defaultTheme) => StyleSheet.create({
+const getStyles = (theme = defaultTheme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

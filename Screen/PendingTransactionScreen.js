@@ -1,10 +1,29 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import axios from 'axios';
 
 const PendingTransactionScreen = ({ navigation, route }) => {
   const { transaction, cartItems } = route.params;
   const rotateAnim = useRef(new Animated.Value(0)).current;
+  const [timeLeft, setTimeLeft] = useState('');
+
+  // Timer countdown for 20 minutes
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const createdTime = new Date(transaction.createdAt);
+      const now = new Date();
+      const diff = 20 * 60 * 1000 - (now - createdTime);
+      if (diff > 0) {
+        const minutes = Math.floor(diff / (60 * 1000));
+        const seconds = Math.floor((diff % (60 * 1000)) / 1000);
+        setTimeLeft(`${minutes}m ${seconds}s remaining`);
+      } else {
+        setTimeLeft('Expired');
+        clearInterval(timer);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [transaction.createdAt]);
 
   useEffect(() => {
     const spin = rotateAnim.interpolate({
@@ -20,21 +39,25 @@ const PendingTransactionScreen = ({ navigation, route }) => {
       })
     ).start();
 
+    // Poll backend for transaction status updates
     const interval = setInterval(async () => {
       try {
-        const res = await axios.get(`http://192.168.43.137:5000/api/transactions/${transaction._id}`);
-        if (res.data.status !== transaction.status) {
+        const res = await axios.get(`https://dashboard-backend-xrss.vercel.app/api/transactions?userId=${transaction.userId}`);
+        const transactions = res.data || [];
+        const updatedTxn = transactions.find(t => t._id === transaction._id);
+
+        if (updatedTxn && updatedTxn.status !== 'Pending') {
           clearInterval(interval);
-          navigation.replace(res.data.status === 'Accepted' ? 'AcceptedTransaction' : 'RejectedTransaction', {
-            transaction: res.data,
+          navigation.replace(updatedTxn.status === 'Accepted' ? 'AcceptedTransaction' : 'RejectedTransaction', {
+            transaction: updatedTxn,
             cartItems,
-            transactionTime: new Date(res.data.updatedAt)
+            transactionTime: new Date(updatedTxn.updatedAt || updatedTxn.createdAt)
           });
         }
       } catch (error) {
         console.error('Polling error:', error);
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -56,6 +79,9 @@ const PendingTransactionScreen = ({ navigation, route }) => {
       <Text style={styles.message}>
         Please wait while we verify your transaction with EasyPaisa
       </Text>
+      {timeLeft !== '' && (
+        <Text style={styles.timerText}>{timeLeft}</Text>
+      )}
       <Text style={styles.note}>
         This process usually takes 2-5 minutes. Keep the app open!
       </Text>

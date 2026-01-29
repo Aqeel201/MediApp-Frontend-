@@ -142,9 +142,7 @@ const HomeScreen = () => {
           o.status === 'pending' &&
           o.paymentStatus === 'unpaid' &&
           o.paymentMethod === 'EasyPaisa' &&
-          (!o.transactionId || o.transactionId === "") &&
-          (!o.completedAt || new Date(o.completedAt) > new Date(Date.now() - 24*60*60*1000)) // Only show if not completed more than 24h ago
-        )
+          (!o.transactionId || o.transactionId === "")
         );
         console.log(`Found ${pending.length} truly pending orders for ${email}`);
         setPendingOrderCount(pending.length);

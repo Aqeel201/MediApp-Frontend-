@@ -443,7 +443,7 @@ const getStyles = (isDarkMode, insets = { top: 0, bottom: 0, left: 0, right: 0 }
     categoryTabTextActive: { color: '#fff', fontWeight: '600' },
     dynamicTabs: { paddingVertical: 4 },
     medicineList: {
-      paddingBottom: hp(12) + insets.bottom,
+      paddingBottom: hp(15) + insets.bottom,
       paddingTop: hp(2),
       paddingHorizontal: wp(6),
     },

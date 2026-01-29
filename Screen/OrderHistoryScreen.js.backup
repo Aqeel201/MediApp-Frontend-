@@ -126,17 +126,9 @@ const OrderHistoryScreen = ({ navigation }) => {
             <View style={styles.orderDetails}>
               <View style={styles.orderHeader}>
                 <Text style={styles.orderId}>#{item._id ? item._id.slice(-6).toUpperCase() : 'N/A'}</Text>
-                <View style={styles.statusContainer}>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                    <Text style={styles.statusText}>{item.status}</Text>
-                  </View>
-                  {item.paymentMethod === 'EasyPaisa' && (
-                    <View style={[styles.paymentStatusBadge, { backgroundColor: item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800' }]}>
-                      <Text style={styles.paymentStatusText}>{item.paymentStatus === 'paid' ? '✓ Paid' : 'Unpaid'}</Text>
-                    </View>
-                  )}
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                  <Text style={styles.statusText}>{item.status}</Text>
                 </View>
-              </View>
               </View>
               <View style={styles.medicinesContainer}>
                 {item.cartItems && item.cartItems.slice(0, 2).map((medicine, index) => (

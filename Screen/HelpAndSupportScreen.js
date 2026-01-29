@@ -35,7 +35,8 @@ const HelpAndSupportScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
-  const styles = getStyles(isDarkMode, insets);
+  const styles = React.useMemo(() => getStyles(isDarkMode, insets), [isDarkMode, insets]);
+  const currentChatStyles = React.useMemo(() => getChatStyles(isDarkMode), [isDarkMode]);
 
   // Contact action handlers
   const handleEmail = () => Linking.openURL("mailto:support@mediapp.com");
@@ -105,15 +106,18 @@ const HelpAndSupportScreen = () => {
   };
 
   const renderMessage = ({ item }) => (
-    <View style={[
-      chatStyles.messageContainer,
-      item.sender === "user" ? chatStyles.userMessage : chatStyles.botMessage,
-      isDarkMode && { backgroundColor: item.sender === "user" ? "#2a2a2a" : "#404040" }
-    ]}>
-      <Text style={[
-        chatStyles.messageText,
-        { color: isDarkMode ? "#fff" : item.sender === "user" ? "#fff" : "#000" }
-      ]}>
+    <View
+      style={[
+        currentChatStyles.messageContainer,
+        item.sender === "user" ? currentChatStyles.userMessage : currentChatStyles.botMessage,
+      ]}
+    >
+      <Text
+        style={[
+          currentChatStyles.messageText,
+          { color: item.sender === "user" ? "#fff" : isDarkMode ? "#fff" : "#000" },
+        ]}
+      >
         {item.text}
       </Text>
     </View>
@@ -232,32 +236,20 @@ const HelpAndSupportScreen = () => {
         transparent={true}
         onRequestClose={() => setIsChatModalVisible(false)}
       >
-        <View style={chatStyles.modalOverlay}>
-          <View style={[
-            chatStyles.modalContent,
-            { backgroundColor: isDarkMode ? "#1a1a1a" : "#fff" }
-          ]}>
-            <View style={chatStyles.modalHeader}>
-              <View style={chatStyles.botTitle}>
-                <FontAwesomeIcon
-                  icon={faRobot}
-                  size={20}
-                  color="#2f95dc"
-                />
-                <Text style={[
-                  chatStyles.modalTitle,
-                  { color: isDarkMode ? "#fff" : "#000" }
-                ]}>
-                  MediBot Assistant
-                </Text>
+        <SafeAreaView style={currentChatStyles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={currentChatStyles.modalContent}
+          >
+            <View style={currentChatStyles.modalHeader}>
+              <View style={currentChatStyles.botTitle}>
+                <View style={{ backgroundColor: '#2f95dc', padding: 8, borderRadius: 20 }}>
+                  <FontAwesomeIcon icon={faRobot} size={20} color="#fff" />
+                </View>
+                <Text style={currentChatStyles.modalTitle}>MediBot AI</Text>
               </View>
               <TouchableOpacity onPress={() => setIsChatModalVisible(false)}>
-                <Text style={[
-                  chatStyles.closeButton,
-                  { color: isDarkMode ? "#fff" : "#666" }
-                ]}>
-                  Close
-                </Text>
+                <Text style={currentChatStyles.closeButton}>Close</Text>
               </TouchableOpacity>
             </View>
 
@@ -265,46 +257,36 @@ const HelpAndSupportScreen = () => {
               data={messages}
               renderItem={renderMessage}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={{ flexGrow: 1 }}
+              contentContainerStyle={currentChatStyles.chatContent}
+              showsVerticalScrollIndicator={false}
             />
 
-
-            <View style={chatStyles.inputWrapper}>
-              <TextInput
-                style={[
-                  chatStyles.input,
-                  {
-                    backgroundColor: isDarkMode ? "#333" : "#f0f0f0",
-                    color: isDarkMode ? "#fff" : "#000"
-                  }
-                ]}
-                placeholder="Type your question..."
-                placeholderTextColor={isDarkMode ? "#888" : "#666"}
-                value={inputText}
-                onChangeText={setInputText}
-                onSubmitEditing={handleSend}
-              />
-              <TouchableOpacity
-                style={chatStyles.sendButton}
-                onPress={handleSend}
-              >
-                <Text style={chatStyles.sendText}>Send</Text>
-              </TouchableOpacity>
-            </View>
-
             {isChatLoading && (
-              <View style={chatStyles.loading}>
+              <View style={currentChatStyles.loading}>
                 <ActivityIndicator size="small" color="#2f95dc" />
-                <Text style={[
-                  chatStyles.loadingText,
-                  { color: isDarkMode ? "#fff" : "#666" }
-                ]}>
-                  MediBot is typing...
-                </Text>
+                <Text style={currentChatStyles.loadingText}>MediBot is thinking...</Text>
               </View>
             )}
-          </View>
-        </View>
+
+            <View style={currentChatStyles.inputWrapper}>
+              <TextInput
+                style={currentChatStyles.input}
+                placeholder="Ask about medicines, dosage..."
+                placeholderTextColor={isDarkMode ? "#aaa" : "#666"}
+                value={inputText}
+                onChangeText={setInputText}
+                onSubmitEditing={handleSendMessage}
+              />
+              <TouchableOpacity
+                style={currentChatStyles.sendButton}
+                onPress={handleSendMessage}
+                disabled={!inputText.trim() || isChatLoading}
+              >
+                <Text style={currentChatStyles.sendText}>Send</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
 
 
@@ -313,187 +295,201 @@ const HelpAndSupportScreen = () => {
 };
 
 // Updated styling with modern design
-const getStyles = (isDarkMode, insets = { top: 0, bottom: 0 }) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: isDarkMode ? "#121212" : "#f8f9fa",
-  },
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: wp(4),
-    paddingBottom: hp(12) + insets.bottom,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: isDarkMode ? "#333" : "#e0e0e0",
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 12,
-  },
-  headerTitle: {
-    fontSize: fontSize(22),
-    fontWeight: "600",
-    color: isDarkMode ? "#fff" : "#2d3436",
-  },
-  heroContainer: {
-    alignItems: "center",
-    marginVertical: 30,
-  },
-  heroImage: {
-    width: 180,
-    height: 180,
-    marginBottom: 20,
-  },
-  heroText: {
-    fontSize: fontSize(18),
-    fontWeight: "500",
-    textAlign: "center",
-    color: isDarkMode ? "#fff" : "#2d3436",
-    marginHorizontal: 40,
-  },
-  gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginVertical: 20,
-  },
-  gridItem: {
-    width: "48%",
-    backgroundColor: isDarkMode ? "#252525" : "#fff",
-    borderRadius: 12,
-    padding: 20,
-    alignItems: "center",
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  gridText: {
-    fontSize: fontSize(14),
-    marginTop: 10,
-    color: isDarkMode ? "#fff" : "#2d3436",
-    fontWeight: "500",
-  },
-  knowledgeSection: {
-    marginTop: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: isDarkMode ? "#fff" : "#2d3436",
-    marginBottom: 15,
-  },
-  topicItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: isDarkMode ? "#252525" : "#fff",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  topicText: {
-    fontSize: 16,
-    color: isDarkMode ? "#fff" : "#2d3436",
-    flex: 1,
-    marginRight: 10,
-  },
-});
+const getStyles = (isDarkMode, insets) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: isDarkMode ? "#121212" : "#f8f9fa",
+    },
+    mainContainer: {
+      flex: 1,
+      backgroundColor: isDarkMode ? "#121212" : "#f8f9fa",
+    },
+    container: {
+      flexGrow: 1,
+      paddingHorizontal: wp(4),
+      paddingBottom: hp(12) + insets.bottom,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: isDarkMode ? "#333" : "#e0e0e0",
+    },
+    backButton: {
+      padding: 8,
+      marginRight: 12,
+    },
+    headerTitle: {
+      fontSize: fontSize(22),
+      fontWeight: "600",
+      color: isDarkMode ? "#fff" : "#2d3436",
+    },
+    heroContainer: {
+      alignItems: "center",
+      marginVertical: 30,
+    },
+    heroImage: {
+      width: 180,
+      height: 180,
+      marginBottom: 20,
+    },
+    heroText: {
+      fontSize: fontSize(18),
+      fontWeight: "500",
+      textAlign: "center",
+      color: isDarkMode ? "#fff" : "#2d3436",
+      marginHorizontal: 40,
+    },
+    gridContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      marginVertical: 20,
+    },
+    gridItem: {
+      width: "48%",
+      backgroundColor: isDarkMode ? "#252525" : "#fff",
+      borderRadius: 12,
+      padding: 20,
+      alignItems: "center",
+      marginBottom: 15,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    gridText: {
+      fontSize: fontSize(14),
+      marginTop: 10,
+      color: isDarkMode ? "#fff" : "#2d3436",
+      fontWeight: "500",
+    },
+    knowledgeSection: {
+      marginTop: 20,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: "600",
+      color: isDarkMode ? "#fff" : "#2d3436",
+      marginBottom: 15,
+    },
+    topicItem: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: isDarkMode ? "#252525" : "#fff",
+      padding: 16,
+      borderRadius: 8,
+      marginBottom: 10,
+    },
+    topicText: {
+      fontSize: 16,
+      color: isDarkMode ? "#fff" : "#2d3436",
+      flex: 1,
+      marginRight: 10,
+    },
+  });
 
-const chatStyles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    height: "85%",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  botTitle: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  closeButton: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  chatContent: {
-    paddingVertical: 16,
-  },
-  messageContainer: {
-    maxWidth: "80%",
-    borderRadius: 12,
-    padding: 12,
-    marginVertical: 6,
-  },
-  userMessage: {
-    backgroundColor: "#2f95dc",
-    alignSelf: "flex-end",
-  },
-  botMessage: {
-    backgroundColor: "#e9ecef",
-    alignSelf: "flex-start",
-  },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 16,
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  sendButton: {
-    backgroundColor: "#2f95dc",
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-  },
-  sendText: {
-    color: "#fff",
-    fontWeight: "500",
-  },
-  loading: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 12,
-    paddingLeft: 8,
-  },
-  loadingText: {
-    fontSize: 14,
-    fontStyle: "italic",
-  },
-});
+const getChatStyles = (isDarkMode) =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "flex-end",
+    },
+    modalContent: {
+      height: "85%",
+      backgroundColor: isDarkMode ? "#1c1c1c" : "#fff",
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 16,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDarkMode ? "#333" : "#eee",
+    },
+    botTitle: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "600",
+      color: isDarkMode ? "#fff" : "#000",
+    },
+    closeButton: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: "#2f95dc",
+    },
+    chatContent: {
+      paddingVertical: 16,
+      flexGrow: 1, // Ensure content can grow
+    },
+    messageContainer: {
+      maxWidth: "80%",
+      borderRadius: 12,
+      padding: 12,
+      marginVertical: 6,
+    },
+    userMessage: {
+      backgroundColor: "#2f95dc",
+      alignSelf: "flex-end",
+    },
+    botMessage: {
+      backgroundColor: isDarkMode ? "#2d3436" : "#e9ecef",
+      alignSelf: "flex-start",
+    },
+    messageText: {
+      fontSize: 16,
+      lineHeight: 22,
+      color: isDarkMode ? "#fff" : "#000",
+    },
+    inputWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: 16,
+      gap: 8,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: isDarkMode ? "#2d3436" : "#f8f9fa",
+      color: isDarkMode ? "#fff" : "#000",
+      borderRadius: 25,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+    },
+    sendButton: {
+      backgroundColor: "#2f95dc",
+      borderRadius: 25,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+    },
+    sendText: {
+      color: "#fff",
+      fontWeight: "500",
+    },
+    loading: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 12,
+      paddingLeft: 8,
+    },
+    loadingText: {
+      fontSize: 14,
+      fontStyle: "italic",
+      color: isDarkMode ? "#aaa" : "#666",
+    },
+  });
 
 export default HelpAndSupportScreen;

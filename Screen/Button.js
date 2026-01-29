@@ -5,13 +5,13 @@ import { useTheme } from './ThemeContext'; // Import the useTheme hook
 
 const Button = ({ title, onPress, style }) => {
   const { isDarkMode } = useTheme();
-  
+
   return (
-    <TouchableOpacity 
-      style={[styles.button, { backgroundColor: isDarkMode ? 'blue' : 'blue' }, style]} 
+    <TouchableOpacity
+      style={[styles.button, { backgroundColor: isDarkMode ? '#0d6efd' : '#0d6efd' }, style]}
       onPress={onPress}
     >
-      <Text style={[styles.buttonText, { color: isDarkMode ? 'white' : 'white' }]}>{title}</Text>
+      <Text style={[styles.buttonText, { color: '#ffffff' }]}>{title}</Text>
     </TouchableOpacity>
   );
 };

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Text, View, TextInput, TouchableOpacity,
   StyleSheet, Alert, Image, ActivityIndicator,
-  KeyboardAvoidingView, Platform, ScrollView
+  KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions, Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from './ThemeContext';
@@ -25,8 +25,9 @@ const defaultTheme = {
 };
 
 const SignUpScreen = () => {
-  const navigation = useNavigation();
+  const { width, height } = useWindowDimensions();
   const { isDarkMode } = useTheme();
+  const navigation = useNavigation();
 
   const theme = {
     colors: {
@@ -34,8 +35,8 @@ const SignUpScreen = () => {
       background: isDarkMode ? '#121212' : '#f8f9fa',
       textPrimary: isDarkMode ? '#ffffff' : '#212529',
       textSecondary: isDarkMode ? '#adb5bd' : '#495057',
-      inputBackground: isDarkMode ? '#2c2c2c' : '#ffffff',
-      inputBorder: isDarkMode ? '#495057' : '#dee2e6',
+      inputBackground: isDarkMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.8)',
+      inputBorder: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
     }
   };
 
@@ -51,6 +52,28 @@ const SignUpScreen = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Animated value for background image
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: -width,
+          duration: 15000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 15000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [animatedValue, width]);
+
+  const styles = React.useMemo(() => getStyles(width, height, isDarkMode), [width, height, isDarkMode]);
 
   const pickProfileImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -138,320 +161,322 @@ const SignUpScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles(theme).container}
-    >
-      <ScrollView
-        contentContainerStyle={styles(theme).scrollContainer}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      <StatusBar style="light" translucent backgroundColor="transparent" />
+
+      {/* Background Animated Images */}
+      <Animated.View
+        style={[
+          styles.backgroundContainer,
+          {
+            transform: [{ translateX: animatedValue }],
+          },
+        ]}
       >
-        <View style={styles(theme).header}>
-          <Image
-            source={require('../assets/LogoBGR.png')}
-            style={styles(theme).logo}
-            resizeMode="contain"
-          />
-          <Text style={styles(theme).title}>Create New Account</Text>
-        </View>
+        <Image
+          source={require('../assets/backround2.jpg')}
+          style={[styles.backgroundImage, { width: width }]}
+          resizeMode="cover"
+        />
+        <Image
+          source={require('../assets/backround2.jpg')}
+          style={[styles.backgroundImage, { width: width }]}
+          resizeMode="cover"
+        />
+      </Animated.View>
 
-        <TouchableOpacity
-          style={styles(theme).imagePicker}
-          onPress={pickProfileImage}
-          activeOpacity={0.8}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoiding}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {profileImage ? (
-            <Image
-              source={{ uri: profileImage }}
-              style={styles(theme).profileImage}
-            />
-          ) : (
-            <View style={styles(theme).imagePlaceholder}>
-              <Camera
-                size={32}
-                color={theme.colors.primary}
-              />
-              <Text style={styles(theme).imagePickerText}>
-                Add Profile Photo
-              </Text>
+          <View style={styles.overlay}>
+            <View style={styles.header}>
+              <TouchableOpacity onPress={pickProfileImage} style={styles.imagePicker}>
+                {profileImage ? (
+                  <Image source={{ uri: profileImage }} style={styles.profileImage} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Camera size={40} color="rgba(255,255,255,0.7)" />
+                  </View>
+                )}
+                <View style={styles.cameraIconContainer}>
+                  <Camera size={14} color="#fff" />
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.titleText}>Join MediApp</Text>
+              <Text style={styles.subtitle}>Care for your health with us</Text>
             </View>
-          )}
-        </TouchableOpacity>
 
-        <View style={styles(theme).formContainer}>
-          <View style={styles(theme).nameRow}>
-            <View style={[styles(theme).inputWrapper, styles(theme).nameInput]}>
-              <User
-                size={16}
-                style={styles(theme).icon}
-              />
-              <TextInput
-                style={styles(theme).input}
-                placeholder="First Name *"
-                placeholderTextColor={theme.colors.textSecondary}
-                value={formData.firstName}
-                onChangeText={(text) => handleInputChange('firstName', text)}
-              />
+            <View style={styles.formContainer}>
+              <Text style={styles.formTitle}>Create Account</Text>
+
+              <View style={styles.nameRow}>
+                <View style={[styles.inputWrapper, styles.nameInput]}>
+                  <User size={18} color={isDarkMode ? '#aaa' : '#666'} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="First Name *"
+                    placeholderTextColor={isDarkMode ? '#aaa' : '#888'}
+                    value={formData.firstName}
+                    onChangeText={(text) => handleInputChange('firstName', text)}
+                  />
+                </View>
+                <View style={[styles.inputWrapper, styles.nameInput]}>
+                  <User size={18} color={isDarkMode ? '#aaa' : '#666'} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Last Name"
+                    placeholderTextColor={isDarkMode ? '#aaa' : '#888'}
+                    value={formData.lastName}
+                    onChangeText={(text) => handleInputChange('lastName', text)}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputWrapper}>
+                <CreditCard size={18} color={isDarkMode ? '#aaa' : '#666'} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="CNIC Number"
+                  placeholderTextColor={isDarkMode ? '#aaa' : '#888'}
+                  value={formData.CNICNo}
+                  onChangeText={(text) => handleInputChange('CNICNo', text)}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputWrapper}>
+                <Mail size={18} color={isDarkMode ? '#aaa' : '#666'} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email (Gmail only) *"
+                  placeholderTextColor={isDarkMode ? '#aaa' : '#888'}
+                  value={formData.email}
+                  onChangeText={(text) => handleInputChange('email', text.toLowerCase())}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.inputWrapper}>
+                <Lock size={18} color={isDarkMode ? '#aaa' : '#666'} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password *"
+                  placeholderTextColor={isDarkMode ? '#aaa' : '#888'}
+                  value={formData.password}
+                  onChangeText={(text) => handleInputChange('password', text)}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                  {showPassword ? <EyeOff size={18} color="#0d6efd" /> : <Eye size={18} color="#0d6efd" />}
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.inputWrapper}>
+                <Lock size={18} color={isDarkMode ? '#aaa' : '#666'} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm Password *"
+                  placeholderTextColor={isDarkMode ? '#aaa' : '#888'}
+                  value={formData.confirmPassword}
+                  onChangeText={(text) => handleInputChange('confirmPassword', text)}
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
+                  {showConfirmPassword ? <EyeOff size={18} color="#0d6efd" /> : <Eye size={18} color="#0d6efd" />}
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.disabledButton]}
+                onPress={handleSignUp}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Send OTP</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.loginLink} onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.loginLinkText}>
+                  Already have an account? <Text style={styles.loginLinkHighlight}>Log In</Text>
+                </Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles(theme).spacer} />
-            <View style={[styles(theme).inputWrapper, styles(theme).nameInput]}>
-              <User
-                size={16}
-                style={styles(theme).icon}
-              />
-              <TextInput
-                style={styles(theme).input}
-                placeholder="Last Name"
-                placeholderTextColor={theme.colors.textSecondary}
-                value={formData.lastName}
-                onChangeText={(text) => handleInputChange('lastName', text)}
-              />
-            </View>
           </View>
-
-          <View style={styles(theme).inputWrapper}>
-            <CreditCard
-              size={16}
-              style={styles(theme).icon}
-            />
-            <TextInput
-              style={styles(theme).input}
-              placeholder="CNIC Number"
-              placeholderTextColor={theme.colors.textSecondary}
-              value={formData.CNICNo}
-              onChangeText={(text) => handleInputChange('CNICNo', text)}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles(theme).inputWrapper}>
-            <Mail
-              size={16}
-              style={styles(theme).icon}
-            />
-            <TextInput
-              style={styles(theme).input}
-              placeholder="Email (Gmail only) *"
-              placeholderTextColor={theme.colors.textSecondary}
-              value={formData.email}
-              onChangeText={(text) => handleInputChange('email', text.toLowerCase())}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={true}
-              spellCheck={true}
-              inputMode="email"
-            />
-          </View>
-
-          <View style={styles(theme).inputWrapper}>
-            <Lock
-              size={18}
-              style={styles(theme).icon}
-            />
-            <TextInput
-              style={styles(theme).input}
-              placeholder="Password *"
-              placeholderTextColor={theme.colors.textSecondary}
-              value={formData.password}
-              onChangeText={(text) => handleInputChange('password', text)}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-            />
-            <TouchableOpacity
-              style={styles(theme).eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? (
-                <Eye size={18} color={theme.colors.textSecondary} />
-              ) : (
-                <EyeOff size={18} color={theme.colors.textSecondary} />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles(theme).inputWrapper}>
-            <Lock
-              size={18}
-              style={styles(theme).icon}
-            />
-            <TextInput
-              style={styles(theme).input}
-              placeholder="Confirm Password *"
-              placeholderTextColor={theme.colors.textSecondary}
-              value={formData.confirmPassword}
-              onChangeText={(text) => handleInputChange('confirmPassword', text)}
-              secureTextEntry={!showConfirmPassword}
-              autoCapitalize="none"
-            />
-            <TouchableOpacity
-              style={styles(theme).eyeIcon}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? (
-                <Eye size={18} color={theme.colors.textSecondary} />
-              ) : (
-                <EyeOff size={18} color={theme.colors.textSecondary} />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={[
-            styles(theme).submitButton,
-            loading && styles(theme).disabledButton
-          ]}
-          onPress={handleSignUp}
-          disabled={loading}
-          activeOpacity={0.9}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color={theme.colors.background} />
-          ) : (
-            <Text style={styles(theme).buttonText}>Send OTP</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles(theme).loginContainer}>
-          <Text style={styles(theme).loginText}>Already have an account?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles(theme).loginLink}> Sign In</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
-const styles = (theme = defaultTheme) => StyleSheet.create({
+const getStyles = (width, height, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#000',
   },
-  scrollContainer: {
+  keyboardAvoiding: {
+    flex: 1,
+  },
+  scrollContent: {
     flexGrow: 1,
-    padding: wp(5),
-    paddingTop: hp(4),
+  },
+  backgroundContainer: {
+    position: 'absolute',
+    flexDirection: 'row',
+    height: '100%',
+    width: width * 2,
+  },
+  backgroundImage: {
+    height: '100%',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingTop: hp(5),
   },
   header: {
     alignItems: 'center',
-    marginBottom: hp(2),
-  },
-  logo: {
-    width: wp(40),
-    height: wp(40),
-    marginBottom: -hp(5),
-  },
-  title: {
-    fontSize: fontSize(22),
-    fontWeight: '600',
-    color: theme.colors.primary,
-    letterSpacing: 0.5,
-    marginTop: hp(0.5),
+    marginBottom: hp(3),
   },
   imagePicker: {
-    alignSelf: 'center',
-    marginBottom: hp(3),
+    marginBottom: hp(2),
   },
   profileImage: {
     width: wp(28),
     height: wp(28),
     borderRadius: wp(14),
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
+    borderWidth: 3,
+    borderColor: '#0d6efd',
   },
   imagePlaceholder: {
     width: wp(28),
     height: wp(28),
     borderRadius: wp(14),
-    backgroundColor: theme.colors.inputBackground,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  imagePickerText: {
-    color: theme.colors.primary,
-    marginTop: hp(0.8),
-    fontSize: fontSize(13),
-    fontWeight: '500',
+  cameraIconContainer: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    backgroundColor: '#0d6efd',
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  titleText: {
+    fontSize: fontSize(26),
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 1,
+  },
+  subtitle: {
+    fontSize: fontSize(14),
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 5,
   },
   formContainer: {
-    marginBottom: hp(2),
+    width: '92%',
+    backgroundColor: isDarkMode ? 'rgba(25, 25, 25, 0.88)' : 'rgba(255, 255, 255, 0.94)',
+    padding: wp(6),
+    borderRadius: 30,
+    alignSelf: 'center',
+    marginBottom: hp(5),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.5)',
+  },
+  formTitle: {
+    fontSize: fontSize(22),
+    fontWeight: '700',
+    color: isDarkMode ? '#fff' : '#1a1a1a',
+    marginBottom: hp(2.5),
+    textAlign: 'center',
   },
   nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: hp(1.2),
+    marginBottom: 0,
   },
   nameInput: {
-    flex: 1,
-    maxWidth: '48%',
-  },
-  spacer: {
-    width: wp(2),
+    flex: 0.48,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.inputBackground,
-    borderRadius: 10,
-    paddingHorizontal: wp(3),
-    marginBottom: hp(1.5),
-    borderWidth: 1,
-    borderColor: theme.colors.inputBorder,
+    marginBottom: hp(1.8),
+    borderWidth: 1.5,
+    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+    borderRadius: 15,
+    backgroundColor: isDarkMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.8)',
+    paddingHorizontal: wp(3.5),
+    height: hp(6.5),
   },
-  icon: {
-    marginRight: wp(2.5),
-    color: theme.colors.textSecondary,
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    height: hp(6),
-    color: theme.colors.textPrimary,
     fontSize: fontSize(15),
-    paddingVertical: 0,
+    color: isDarkMode ? '#fff' : '#1a1a1a',
+    height: '100%',
   },
   eyeIcon: {
-    padding: wp(1.5),
-    marginLeft: wp(1),
+    padding: 8,
   },
   submitButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 10,
+    backgroundColor: '#0d6efd',
     height: hp(6.5),
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 2,
-    marginTop: hp(2),
-  },
-  disabledButton: {
-    opacity: 0.7,
+    marginTop: hp(1),
+    marginBottom: hp(2),
+    shadowColor: '#0d6efd',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonText: {
-    color: theme.colors.background,
+    color: '#fff',
     fontSize: fontSize(17),
-    fontWeight: '600',
-    letterSpacing: 0.4,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: hp(2.5),
-    marginBottom: hp(3),
-  },
-  loginText: {
-    color: theme.colors.textSecondary,
-    fontSize: fontSize(14),
+  disabledButton: {
+    opacity: 0.6,
   },
   loginLink: {
-    color: theme.colors.primary,
-    fontWeight: '600',
+    alignItems: 'center',
+    marginTop: hp(1),
+  },
+  loginLinkText: {
+    color: isDarkMode ? '#aaa' : '#666',
     fontSize: fontSize(14),
+  },
+  loginLinkHighlight: {
+    color: '#0d6efd',
+    fontWeight: '800',
   },
 });
 

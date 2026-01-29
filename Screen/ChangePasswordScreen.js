@@ -23,13 +23,15 @@ const defaultTheme = {
 const ChangePasswordScreen = () => {
   const navigation = useNavigation();
   const context = useTheme();
-
+  const { isDarkMode } = context; // Assuming isDarkMode comes from context
   const theme = {
     colors: {
       ...defaultTheme.colors,
       ...(context?.theme?.colors || {}),
     }
   };
+
+  const styles = React.useMemo(() => getStyles(theme, isDarkMode), [isDarkMode]);
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,33 +72,33 @@ const ChangePasswordScreen = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles(theme).container}
+      style={styles.container}
     >
       <ScrollView
-        contentContainerStyle={styles(theme).scrollContainer}
+        contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles(theme).header}>
+        <View style={styles.header}>
           <Image
             source={require('../assets/LogoBGR.png')}
-            style={styles(theme).logo}
+            style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles(theme).title}>Change Password</Text>
-          <Text style={styles(theme).subtitle}>
+          <Text style={styles.title}>Change Password</Text>
+          <Text style={styles.subtitle}>
             Enter your email to receive an OTP for password reset
           </Text>
         </View>
 
-        <View style={styles(theme).formContainer}>
-          <View style={styles(theme).inputWrapper}>
+        <View style={styles.formContainer}>
+          <View style={styles.inputWrapper}>
             <FontAwesome
               name="envelope-o"
               size={16}
-              style={styles(theme).icon}
+              style={styles.icon}
             />
             <TextInput
-              style={styles(theme).input}
+              style={styles.input}
               placeholder="Email (Gmail only) *"
               placeholderTextColor={theme.colors.textSecondary}
               value={email}
@@ -112,8 +114,8 @@ const ChangePasswordScreen = () => {
 
         <TouchableOpacity
           style={[
-            styles(theme).submitButton,
-            loading && styles(theme).disabledButton
+            styles.submitButton,
+            loading && styles.disabledButton
           ]}
           onPress={handleRequestOTP}
           disabled={loading}
@@ -122,21 +124,21 @@ const ChangePasswordScreen = () => {
           {loading ? (
             <ActivityIndicator size="small" color={theme.colors.background} />
           ) : (
-            <Text style={styles(theme).buttonText}>Send OTP</Text>
+            <Text style={styles.buttonText}>Send OTP</Text>
           )}
         </TouchableOpacity>
 
-        <View style={styles(theme).backContainer}>
+        <View style={styles.backContainer}>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles(theme).backLink}>Back to Login</Text>
+            <Text style={styles.backLink}>Back to Login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingView >
   );
 };
 
-const styles = (theme = defaultTheme) => StyleSheet.create({
+const getStyles = (theme = defaultTheme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
