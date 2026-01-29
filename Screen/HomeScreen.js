@@ -7,15 +7,17 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  StatusBar,
   Animated,
   PanResponder,
   RefreshControl,
   Modal,
   useWindowDimensions,
 } from "react-native";
+import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { wp, hp, fontSize } from "./responsive";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import * as Location from 'expo-location';
 import {
@@ -61,6 +63,8 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [clinicStatus, setClinicStatus] = useState("Operational");
   const [userCount, setUserCount] = useState(0);
+  const [pendingOrderCount, setPendingOrderCount] = useState(0);
+  const [userEmail, setUserEmail] = useState(null); // Added userEmail state for fetching pending orders
   const [searchText, setSearchText] = useState("");
   const [medicines, setMedicines] = useState([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
@@ -113,9 +117,23 @@ const HomeScreen = () => {
       .catch((err) => console.error("Error fetching user count:", err));
   };
 
+  const fetchPendingOrders = async (email) => {
+    if (!email) return; // Ensure email is available
+    try {
+      const resp = await fetch(`https://dashboard-backend-xrss.vercel.app/api/order?userId=${email}`);
+      const data = await resp.json();
+      if (data.orders) {
+        const pending = data.orders.filter(o => o.paymentMethod === 'EasyPaisa' && o.status === 'pending');
+        setPendingOrderCount(pending.length);
+      }
+    } catch (e) {
+      console.error("Error fetching pending orders:", e);
+    }
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
-    Promise.all([fetchMedicines(), fetchUserCount()]).finally(() => {
+    Promise.all([fetchMedicines(), fetchUserCount(), fetchPendingOrders(userEmail)]).finally(() => {
       setRefreshing(false);
     });
   };
@@ -123,7 +141,23 @@ const HomeScreen = () => {
   useEffect(() => {
     fetchMedicines();
     fetchUserCount();
+
+    // Fetch actual user email from AsyncStorage
+    AsyncStorage.getItem("user").then((userData) => {
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.email) {
+          setUserEmail(user.email);
+        }
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    if (userEmail) {
+      fetchPendingOrders(userEmail);
+    }
+  }, [userEmail]); // Fetch pending orders when userEmail becomes available
 
   // Search Filtering
   const filteredMedicines = medicines.filter(
@@ -234,13 +268,8 @@ const HomeScreen = () => {
   // Arrays for Dashboard Overview
   const topCategories = [
     { icon: faPills, label: "Medicines", screen: "Medicine" },
-    { icon: faUserMd, label: "Medicine Recommendation", screen: "MedicalKit" },
     { icon: faBell, label: "Medicine Reminder", screen: "MedicineReminder" },
-    // { icon: faThermometer, label: "Health Devices", screen: "HealthDevices" },
-    { icon: faKitMedical, label: "Medicine Match Game", screen: "MedicineMatchGame" },
-    { icon: faStar, label: "Smart Interaction", screen: "SmartInteraction" },
     { icon: faComments, label: "Chat", screen: "Chat" },
-    // { icon: faTooth, label: "Dental Care", screen: "DentalCare" },
   ];
 
   const features = [
@@ -260,12 +289,21 @@ const HomeScreen = () => {
     <View style={styles.mainContainer}>
       <View style={styles.container}>
         <StatusBar
-          barStyle={isDarkMode ? "light-content" : "dark-content"}
+          style={isDarkMode ? "light" : "dark"}
           backgroundColor="transparent"
           translucent={true}
         />
+        {pendingOrderCount > 0 && (
+          <TouchableOpacity
+            style={styles.pendingNotification}
+            onPress={() => navigation.navigate('OrderHistory')}
+          >
+            <FontAwesomeIcon icon={faBell} color="#fff" size={16} />
+            <Text style={styles.pendingText}> You have {pendingOrderCount} pending payment(s). Click to complete.</Text>
+          </TouchableOpacity>
+        )}
         <ScrollView
-          contentContainerStyle={[styles.scrollContainer, { paddingTop: insets.top + 20 }]}
+          contentContainerStyle={[styles.scrollContainer, { paddingTop: insets.top }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -502,7 +540,7 @@ const HomeScreen = () => {
   );
 };
 
-const getStyles = (isDarkMode, screenWidth, insets) =>
+const getStyles = (isDarkMode, screenWidth, insets = { top: 0, bottom: 0 }) =>
   StyleSheet.create({
     element: {
       width: screenWidth, // Sets the width to the screen's width
@@ -522,37 +560,38 @@ const getStyles = (isDarkMode, screenWidth, insets) =>
       backgroundColor: "transparent",
     },
     scrollContainer: {
-      padding: 20,
-      paddingBottom: 100,
+      padding: wp(5),
+      paddingBottom: hp(12) + insets.bottom,
     },
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 20,
+      marginBottom: hp(2),
     },
     locationContainer: {
       flexDirection: "row",
       alignItems: "center",
     },
     locationText: {
-      fontSize: 16,
+      fontSize: fontSize(14),
       color: "#007bff",
       marginLeft: 5,
       fontWeight: "600",
+      maxWidth: wp(50),
     },
     titleContainer: {
       alignItems: "center",
       marginBottom: 20,
     },
     title: {
-      fontSize: 26,
+      fontSize: fontSize(24),
       fontWeight: "bold",
       color: isDarkMode ? "#fff" : "#333",
       textAlign: "center",
     },
     subtitle: {
-      fontSize: 16,
+      fontSize: fontSize(14),
       color: isDarkMode ? "#ccc" : "#555",
       textAlign: "center",
       marginTop: 5,
@@ -561,10 +600,10 @@ const getStyles = (isDarkMode, screenWidth, insets) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: isDarkMode ? "#333" : "#fff",
-      borderRadius: 30,
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      marginBottom: 20,
+      borderRadius: wp(8),
+      paddingHorizontal: wp(5),
+      paddingVertical: hp(1.5),
+      marginBottom: hp(2),
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
@@ -574,7 +613,7 @@ const getStyles = (isDarkMode, screenWidth, insets) =>
     searchInput: {
       flex: 1,
       marginLeft: 10,
-      fontSize: 16,
+      fontSize: fontSize(16),
       color: isDarkMode ? "#fff" : "#333",
     },
     searchResultsContainer: {
@@ -610,10 +649,10 @@ const getStyles = (isDarkMode, screenWidth, insets) =>
       marginTop: 20,
     },
     sectionTitle: {
-      fontSize: 20,
+      fontSize: fontSize(18),
       fontWeight: "bold",
       color: isDarkMode ? "#fff" : "#333",
-      marginVertical: 15,
+      marginVertical: hp(1.5),
     },
     dashboard: {
       marginBottom: 20,
@@ -634,7 +673,7 @@ const getStyles = (isDarkMode, screenWidth, insets) =>
       color: isDarkMode ? "#ccc" : "#666",
     },
     dashboardValue: {
-      fontSize: 18,
+      fontSize: fontSize(16),
       fontWeight: "bold",
       color: isDarkMode ? "#fff" : "#333",
     },
@@ -672,7 +711,7 @@ const getStyles = (isDarkMode, screenWidth, insets) =>
     },
     bannerImageContainer: {
       width: "100%",
-      height: 200,
+      height: hp(22),
     },
     bannerImage: {
       width: "100%",
@@ -690,7 +729,7 @@ const getStyles = (isDarkMode, screenWidth, insets) =>
       paddingHorizontal: 20,
     },
     bannerText: {
-      fontSize: 20,
+      fontSize: fontSize(18),
       fontWeight: "bold",
       color: "#fff",
       textAlign: "center",
@@ -739,7 +778,7 @@ const getStyles = (isDarkMode, screenWidth, insets) =>
     },
     orderButtonText: {
       color: "#fff",
-      fontSize: 18,
+      fontSize: fontSize(16),
       fontWeight: "bold",
     },
   });

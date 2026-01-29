@@ -2,16 +2,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import {
-  faHome,
-  faBell,
-  faShoppingBag,
-  faUser,
-} from "@fortawesome/free-solid-svg-icons";
+import { Home, Bell, ShoppingBag, User as UserIcon } from 'lucide-react-native';
 import { useTheme } from "./ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CartContext } from "./CartContext";
+import { wp, hp, fontSize } from "./responsive";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Footer = () => {
   const navigation = useNavigation();
@@ -22,7 +18,8 @@ const Footer = () => {
   const { cartItems } = useContext(CartContext);
   const cartCount = cartItems ? cartItems.length : 0;
 
-  const styles = getStyles(isDarkMode);
+  const insets = useSafeAreaInsets();
+  const styles = getStyles(isDarkMode, insets);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -53,14 +50,14 @@ const Footer = () => {
           style={styles.footerItem}
           onPress={() => navigation.navigate("Home")}
         >
-          <FontAwesomeIcon icon={faHome} size={24} style={styles.icon} />
+          <Home size={24} color={styles.icon.color} style={{ marginBottom: 4 }} />
           <Text style={styles.footerLabel}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.footerItem}
           onPress={() => navigation.navigate("NotificationPage")}
         >
-          <FontAwesomeIcon icon={faBell} size={24} style={styles.icon} />
+          <Bell size={24} color={styles.icon.color} style={{ marginBottom: 4 }} />
           <Text style={styles.footerLabel}>Alerts</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -68,7 +65,7 @@ const Footer = () => {
           onPress={() => navigation.navigate("OnlineMedicinePurchase")}
         >
           <View style={styles.iconContainer}>
-            <FontAwesomeIcon icon={faShoppingBag} size={24} style={styles.icon} />
+            <ShoppingBag size={24} color={styles.icon.color} style={{ marginBottom: 4 }} />
             {cartCount > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -101,13 +98,14 @@ const Footer = () => {
   );
 };
 
-const getStyles = (isDarkMode) =>
+const getStyles = (isDarkMode, insets = { bottom: 0 }) =>
   StyleSheet.create({
     footer: {
       backgroundColor: isDarkMode ? "#1E1E1E" : "#FFFFFF",
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       paddingVertical: 10,
+      paddingBottom: 10 + insets.bottom,
       flexDirection: "row",
       justifyContent: "space-around",
       alignItems: "center",

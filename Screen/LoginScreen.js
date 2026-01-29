@@ -19,11 +19,12 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from './ThemeContext';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { Mail, Lock, Eye, EyeOff, Fingerprint } from 'lucide-react-native';
 import axios from 'axios';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { CartContext } from './CartContext';
-import { Fingerprint } from 'lucide-react-native';
+import { wp, hp, fontSize } from './responsive';
+
 
 const LoginScreen = () => {
   const { width, height } = useWindowDimensions();
@@ -186,8 +187,7 @@ const LoginScreen = () => {
 
               {/* Email Input */}
               <View style={styles.inputContainer}>
-                <Icon
-                  name="envelope"
+                <Mail
                   size={20}
                   color={isDarkMode ? '#aaa' : '#333'}
                   style={styles.inputIcon}
@@ -206,8 +206,7 @@ const LoginScreen = () => {
 
               {/* Password Input */}
               <View style={styles.inputContainer}>
-                <Icon
-                  name="lock"
+                <Lock
                   size={20}
                   color={isDarkMode ? '#aaa' : '#333'}
                   style={styles.inputIcon}
@@ -225,11 +224,11 @@ const LoginScreen = () => {
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.togglePassword}
                 >
-                  <Icon
-                    name={showPassword ? 'eye-slash' : 'eye'}
-                    size={20}
-                    color="#0d6efd"
-                  />
+                  {showPassword ? (
+                    <EyeOff size={20} color="#0d6efd" />
+                  ) : (
+                    <Eye size={20} color="#0d6efd" />
+                  )}
                 </TouchableOpacity>
               </View>
 
@@ -300,51 +299,51 @@ const getStyles = (isDarkMode, width = 375, height = 667) =>
     scrollContainer: {
       flexGrow: 1,
       justifyContent: 'center',
-      paddingHorizontal: 20,
-      paddingBottom: 20,
+      paddingHorizontal: wp(6),
+      paddingBottom: hp(5),
     },
     logoContainer: {
       alignItems: 'center',
-      marginBottom: 20,
+      marginBottom: hp(2),
     },
     logo: {
-      width: 80,
-      height: 80,
-      marginBottom: 10,
-      borderRadius: 15,
+      width: wp(20),
+      height: wp(20),
+      marginBottom: hp(1),
+      borderRadius: wp(4),
     },
     logoText: {
-      fontSize: 32,
+      fontSize: fontSize(28),
       fontWeight: 'bold',
       color: '#fff',
     },
     formContainer: {
       width: '100%',
       backgroundColor: 'rgba(255,255,255,0.95)',
-      padding: 20,
-      borderRadius: 10,
+      padding: wp(6),
+      borderRadius: wp(3),
     },
     title: {
-      fontSize: 24,
+      fontSize: fontSize(22),
       fontWeight: '600',
       textAlign: 'center',
-      marginBottom: 20,
+      marginBottom: hp(2),
       color: '#333',
     },
     inputContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 15,
+      marginBottom: hp(2),
       borderWidth: 1,
       borderColor: isDarkMode ? '#555' : '#ccc',
       borderRadius: 10,
       backgroundColor: '#fff',
-      paddingHorizontal: 10,
+      paddingHorizontal: wp(3),
     },
     input: {
       flex: 1,
-      height: 50,
-      fontSize: 16,
+      height: hp(6.5),
+      fontSize: fontSize(16),
       color: '#333',
     },
     inputIcon: {
@@ -355,17 +354,17 @@ const getStyles = (isDarkMode, width = 375, height = 667) =>
     },
     forgotPasswordText: {
       color: '#0d6efd',
-      fontSize: 16,
+      fontSize: fontSize(16),
       textAlign: 'right',
-      marginBottom: 20,
+      marginBottom: hp(2.5),
     },
     loginButton: {
       backgroundColor: '#0d6efd',
-      height: 50,
-      borderRadius: 10,
+      height: hp(6.5),
+      borderRadius: wp(3),
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 15,
+      marginBottom: hp(2),
     },
     loginButtonText: {
       color: '#fff',
@@ -374,12 +373,13 @@ const getStyles = (isDarkMode, width = 375, height = 667) =>
     },
     signupText: {
       color: '#333',
-      fontSize: 16,
+      fontSize: fontSize(16),
       textAlign: 'center',
     },
     signupTextHighlight: {
       color: '#0d6efd',
       fontWeight: 'bold',
+      fontSize: fontSize(16),
     },
     biometricButton: {
       alignItems: 'center',

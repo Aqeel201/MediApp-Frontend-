@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTheme } from "./ThemeContext";
 import Footer from "./Footer";
+import { wp, hp, fontSize } from "./responsive";
 
 import {
   View,
@@ -47,7 +48,7 @@ const ProfileScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-
+  const styles = getStyles(isDarkMode, insets);
   // Function to load user details from AsyncStorage
   const loadUserData = useCallback(async () => {
     try {
@@ -93,7 +94,7 @@ const ProfileScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? "#1c1c1c" : "white", paddingTop: insets.top }]}>
       <StatusBar
-        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        style={isDarkMode ? "light" : "dark"}
         backgroundColor="transparent"
         translucent={true}
         animated={true}
@@ -226,79 +227,67 @@ const ProfileScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode, insets = { top: 0, bottom: 0 }) => StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: {
-    paddingBottom: 90, // Space for the Footer
+    paddingBottom: hp(12) + insets.bottom,
   },
   header: {
     backgroundColor: "transparent",
-    padding: 20,
+    paddingHorizontal: wp(5),
+    paddingTop: hp(1),
+    paddingBottom: hp(2),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerText: { fontSize: 20, fontWeight: "bold" },
-  iconButton: { padding: 10 },
+  headerText: { fontSize: fontSize(20), fontWeight: "bold" },
+  iconButton: { padding: wp(2.5) },
   profileSection: {
     alignItems: "center",
-    marginVertical: 20,
+    marginVertical: hp(2.5),
   },
   profilePic: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: wp(28),
+    height: wp(28),
+    borderRadius: wp(14),
     backgroundColor: "#eaeaea",
+    borderWidth: 2,
+    borderColor: isDarkMode ? "#444" : "#eee",
   },
   nameText: {
-    marginTop: 10,
-    fontSize: 18,
+    marginTop: hp(1.5),
+    fontSize: fontSize(18),
     fontWeight: "bold",
   },
   menuItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingVertical: hp(2),
+    paddingHorizontal: wp(5),
     borderBottomWidth: 1,
     borderBottomColor: "#eaeaea",
   },
-  menuText: { flex: 1, marginLeft: 20, fontSize: 16 },
-  locationDetail: { fontSize: 14 },
+  menuText: { flex: 1, marginLeft: wp(5), fontSize: fontSize(16) },
+  locationDetail: { fontSize: fontSize(14) },
   separator: {
     height: 1,
     backgroundColor: "#eaeaea",
-    marginVertical: 10,
+    marginVertical: hp(1),
   },
   logoutButton: {
-    marginBottom: 20,
-    marginHorizontal: 20,
-    padding: 15,
+    marginBottom: hp(3),
+    marginHorizontal: wp(5),
+    padding: hp(1.8),
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#0d6efd",
     alignItems: "center",
     backgroundColor: "transparent",
   },
-  logoutText: { fontSize: 16, fontWeight: "bold" },
-  footer: {
-    backgroundColor: "transparent",
-    paddingVertical: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  footerContainer: {
-    flexDirection: "row",
-    backgroundColor: "#0d6efd",
-    borderRadius: 50,
-    padding: 10,
-    paddingHorizontal: 20,
-    justifyContent: "space-around",
-    width: "90%",
-  },
-  footerItem: { alignItems: "center", padding: 10 },
+  logoutText: { fontSize: fontSize(16), fontWeight: "bold" },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -306,27 +295,32 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
-    width: "80%",
-    borderRadius: 10,
-    padding: 20,
+    width: wp(80),
+    borderRadius: 15,
+    padding: wp(6),
     alignItems: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
-  modalTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 20 },
+  modalTitle: { fontSize: fontSize(20), fontWeight: "bold", marginBottom: hp(2.5) },
   modalItem: {
-    paddingVertical: 10,
+    paddingVertical: hp(1.5),
     borderBottomWidth: 1,
     borderBottomColor: "#eaeaea",
     width: "100%",
     alignItems: "center",
   },
-  modalItemText: { fontSize: 16 },
+  modalItemText: { fontSize: fontSize(16) },
   modalCloseButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    marginTop: hp(2.5),
+    paddingVertical: hp(1.2),
+    paddingHorizontal: wp(8),
     borderRadius: 10,
   },
-  modalCloseButtonText: { color: "white", fontSize: 16 },
+  modalCloseButtonText: { color: "white", fontSize: fontSize(16), fontWeight: "600" },
 });
 
 export default ProfileScreen;

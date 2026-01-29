@@ -9,11 +9,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, ShoppingCart, Activity } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from './ThemeContext';
 import { CartContext } from './CartContext';
 import NetInfo from '@react-native-community/netinfo';
+import { wp, hp, fontSize } from './responsive';
+import { StatusBar } from 'react-native';
 
 const MedicineDescription = ({ route, navigation }) => {
   const { medicine } = route.params;
@@ -91,17 +93,17 @@ const MedicineDescription = ({ route, navigation }) => {
     <ScrollView
       contentContainerStyle={[
         styles.container,
-        { backgroundColor: isDarkMode ? '#f0f4ff' : '#f0f4ff' },
+        { backgroundColor: isDarkMode ? '#121212' : '#f0f4ff', paddingBottom: hp(5) + insets.bottom },
       ]}
     >
-      <View style={[styles.headerContainer, { marginTop: insets.top }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+      <View style={[styles.headerContainer, { marginTop: insets.top + hp(1) }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={handleBackPress}
           hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
         >
-          <MaterialIcons
-            name="arrow-back"
+          <ArrowLeft
             size={28}
             color={isDarkMode ? '#007bff' : '#007bff'}
           />
@@ -118,7 +120,7 @@ const MedicineDescription = ({ route, navigation }) => {
           style={styles.cartButton}
           onPress={() => navigation.navigate('OnlineMedicinePurchase')}
         >
-          <Ionicons name="cart-outline" size={28} color={isDarkMode ? '#007bff' : '#007bff'} />
+          <ShoppingCart size={28} color={isDarkMode ? '#007bff' : '#007bff'} />
           {cartCount > 0 && (
             <View style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -133,13 +135,12 @@ const MedicineDescription = ({ route, navigation }) => {
         <View
           style={[
             styles.noImagePlaceholder,
-            { backgroundColor: isDarkMode ? '#d0d8ff' : '#d0d8ff' },
+            { backgroundColor: isDarkMode ? '#1e1e1e' : '#d0d8ff' },
           ]}
         >
-          <FontAwesome5
-            name="pills"
+          <Activity
             size={100}
-            color={isDarkMode ? '#007bff' : '#007bff'}
+            color={isDarkMode ? '#3b82f6' : '#007bff'}
           />
         </View>
       )}
@@ -148,7 +149,7 @@ const MedicineDescription = ({ route, navigation }) => {
         <Text
           style={[
             styles.title,
-            { color: isDarkMode ? '#1c1c1c' : '#1c1c1c' },
+            { color: isDarkMode ? '#fff' : '#1c1c1c' },
           ]}
         >
           {medicine.name}
@@ -156,7 +157,7 @@ const MedicineDescription = ({ route, navigation }) => {
         <Text
           style={[
             styles.price,
-            { color: isDarkMode ? '#1c1c1c' : '#1c1c1c' },
+            { color: isDarkMode ? '#3b82f6' : '#007bff' },
           ]}
         >
           PKR {medicine.price}
@@ -166,14 +167,14 @@ const MedicineDescription = ({ route, navigation }) => {
       <View
         style={[
           styles.section,
-          { backgroundColor: isDarkMode ? '#fff' : '#fff' },
+          { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' },
         ]}
       >
         <View style={styles.sectionHeader}>
           <Text
             style={[
               styles.sectionTitle,
-              { color: isDarkMode ? '#007bff' : '#007bff' },
+              { color: isDarkMode ? '#3b82f6' : '#007bff' },
             ]}
           >
             Description
@@ -185,7 +186,7 @@ const MedicineDescription = ({ route, navigation }) => {
           <Text
             style={[
               styles.infoText,
-              { color: isDarkMode ? '#1c1c1c' : '#1c1c1c' },
+              { color: isDarkMode ? '#ddd' : '#1c1c1c' },
             ]}
           >
             {description}
@@ -196,13 +197,13 @@ const MedicineDescription = ({ route, navigation }) => {
       <View
         style={[
           styles.section,
-          { backgroundColor: isDarkMode ? '#fff' : '#fff' },
+          { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' },
         ]}
       >
         <Text
           style={[
             styles.sectionTitle,
-            { color: isDarkMode ? '#007bff' : '#007bff' },
+            { color: isDarkMode ? '#3b82f6' : '#007bff' },
           ]}
         >
           Dosage & Instructions
@@ -210,7 +211,7 @@ const MedicineDescription = ({ route, navigation }) => {
         <Text
           style={[
             styles.infoText,
-            { color: isDarkMode ? '#1c1c1c' : '#1c1c1c' },
+            { color: isDarkMode ? '#ddd' : '#1c1c1c' },
           ]}
         >
           {medicine.dosage || 'Dosage information not available.'}
@@ -235,19 +236,20 @@ const MedicineDescription = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: wp(5),
     flexGrow: 1,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f4ff',
+    backgroundColor: isDarkMode ? '#121212' : '#f0f4ff',
   },
   loadingText: {
     marginTop: 10,
-    fontSize: 18,
+    fontSize: fontSize(18),
     fontWeight: '500',
+    color: isDarkMode ? '#fff' : '#1c1c1c',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -263,7 +265,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   pageTitle: {
-    fontSize: 24,
+    fontSize: fontSize(22),
     fontWeight: 'bold',
     textAlign: 'center',
     flex: 1,
@@ -293,9 +295,9 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 250,
-    borderRadius: 15,
-    marginBottom: 20,
+    height: hp(30),
+    borderRadius: wp(4),
+    marginBottom: hp(2),
     resizeMode: 'contain',
     backgroundColor: '#fff',
   },
@@ -312,13 +314,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: fontSize(24),
     fontWeight: 'bold',
     marginBottom: 5,
     textAlign: 'center',
   },
   price: {
-    fontSize: 24,
+    fontSize: fontSize(20),
     fontWeight: '600',
   },
   section: {
@@ -338,12 +340,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: fontSize(18),
     fontWeight: 'bold',
     marginBottom: 10,
   },
   infoText: {
-    fontSize: 16,
+    fontSize: fontSize(14),
     lineHeight: 24,
     textAlign: 'justify',
   },
@@ -366,7 +368,7 @@ const styles = StyleSheet.create({
   buyNowText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: fontSize(16),
   },
 });
 

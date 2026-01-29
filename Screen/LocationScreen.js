@@ -8,13 +8,14 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
-  ScrollView,
-  Animated,
+  Modal,
 } from "react-native";
+import MapView, { Marker } from "react-native-maps";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from 'expo-location';
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { wp, hp, fontSize } from "./responsive";
 import {
   faArrowLeft,
   faBell,
@@ -59,6 +60,15 @@ const OnlineMedicinePurchase = () => {
     billingLastName: "",
     billingStreetAddress: "",
     billingPhoneNumber: "",
+    location: null,
+  });
+
+  const [showMap, setShowMap] = useState(false);
+  const [mapRegion, setMapRegion] = useState({
+    latitude: 35.3247,
+    longitude: 75.5510,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
   });
 
   const shippingMethods = [
@@ -78,21 +88,22 @@ const OnlineMedicinePurchase = () => {
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        return;
-      }
+      if (status !== 'granted') return;
       try {
         let location = await Location.getCurrentPositionAsync({});
-        setFormData(prev => ({ ...prev, location: { latitude: location.coords.latitude, longitude: location.coords.longitude } }));
+        const coords = { latitude: location.coords.latitude, longitude: location.coords.longitude };
+        setFormData(prev => ({ ...prev, location: coords }));
+        setMapRegion(prev => ({ ...prev, ...coords }));
+
         let address = await Location.reverseGeocodeAsync(location.coords);
         if (address && address.length > 0) {
           const { street, city, region, country } = address[0];
           setFormData(prev => ({
             ...prev,
             streetAddress: prev.streetAddress || street || "",
-            city: city || region || "Skardu",
+            city: city || region || "",
             country: country || "Pakistan",
-            region: region || "Skardu"
+            region: region || ""
           }));
         }
       } catch (error) {
@@ -100,6 +111,13 @@ const OnlineMedicinePurchase = () => {
       }
     })();
   }, []);
+
+  const handleMapSelect = (e) => {
+    const coords = e.nativeEvent.coordinate;
+    setFormData(prev => ({ ...prev, location: coords }));
+    setShowMap(false);
+    Alert.alert("Success", "Location set from map!");
+  };
 
   useEffect(() => {
     AsyncStorage.getItem("user")
@@ -247,7 +265,7 @@ const OnlineMedicinePurchase = () => {
   return (
     <View style={styles.safeArea}>
       <StatusBar
-        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        style={isDarkMode ? "light" : "dark"}
         backgroundColor="transparent"
         translucent={true}
       />
@@ -300,10 +318,11 @@ const OnlineMedicinePurchase = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Information</Text>
           <TextInput
-            style={[styles.input, { backgroundColor: "#e9ecef" }]}
+            style={[styles.input, { backgroundColor: isDarkMode ? "#333" : "#e9ecef" }]}
             placeholder="Email Address *"
             value={formData.email}
             editable={false}
+            placeholderTextColor={isDarkMode ? "#888" : "#999"}
           />
         </View>
         <View style={styles.section}>
@@ -330,9 +349,24 @@ const OnlineMedicinePurchase = () => {
               onChangeText={(text) => handleInputChange("lastName", text)}
             />
           </View>
+          <TouchableOpacity
+            style={styles.mapButton}
+            onPress={() => setShowMap(true)}
+          >
+            <FontAwesomeIcon icon={faCheckCircle} size={18} color="#fff" />
+            <Text style={styles.mapButtonText}> Set Location from Map</Text>
+          </TouchableOpacity>
+
+          {formData.location && (
+            <Text style={styles.coordinatesText}>
+              Selected: {formData.location.latitude.toFixed(4)}, {formData.location.longitude.toFixed(4)}
+            </Text>
+          )}
+
           <TextInput
             style={styles.input}
             placeholder="Street Address *"
+            placeholderTextColor={isDarkMode ? "#888" : "#999"}
             value={formData.streetAddress}
             onChangeText={(text) => handleInputChange("streetAddress", text)}
           />
@@ -340,14 +374,11 @@ const OnlineMedicinePurchase = () => {
             <Text style={styles.disabledText}>{formData.country || "Pakistan"}</Text>
           </View>
           <View style={styles.disabledField}>
-            <Text style={styles.disabledText}>{formData.region || "Skardu"}</Text>
+            <Text style={styles.disabledText}>{formData.region || "Select Region"}</Text>
           </View>
           <View style={styles.disabledField}>
-            <Text style={styles.disabledText}>{formData.city || "Skardu"}</Text>
+            <Text style={styles.disabledText}>{formData.city || "Select City"}</Text>
           </View>
-          <Text style={styles.note}>
-            Currently <Text style={styles.bold}>Mediapp</Text> is only available in the Skardu region.
-          </Text>
           <TextInput
             style={styles.input}
             placeholder="Phone Number *"
@@ -399,14 +430,8 @@ const OnlineMedicinePurchase = () => {
               onChangeText={(text) => handleInputChange("billingStreetAddress", text)}
             />
             <View style={styles.disabledField}>
-              <Text style={styles.disabledText}>Skardu</Text>
+              <Text style={styles.disabledText}>Region/City Info</Text>
             </View>
-            <View style={styles.disabledField}>
-              <Text style={styles.disabledText}>Skardu</Text>
-            </View>
-            <Text style={styles.note}>
-              Currently <Text style={styles.bold}>Mediapp</Text> is only available in the Skardu region.
-            </Text>
             <TextInput
               style={styles.input}
               placeholder="Phone Number *"
@@ -485,116 +510,187 @@ const OnlineMedicinePurchase = () => {
             </>
           )}
         </View>
-        <TouchableOpacity style={styles.placeOrderButton} onPress={handleSubmit}>
-          <Text style={styles.placeOrderText}>Place Order</Text>
-        </TouchableOpacity>
       </ScrollView>
+
+      {/* Map Modal */}
+      <Modal visible={showMap} animationType="slide">
+        <View style={{ flex: 1 }}>
+          <MapView
+            style={{ flex: 1 }}
+            region={mapRegion}
+            onPress={handleMapSelect}
+            showsUserLocation={true}
+          >
+            {formData.location && (
+              <Marker coordinate={formData.location} title="Delivery Location" />
+            )}
+          </MapView>
+          <TouchableOpacity
+            style={styles.closeMapButton}
+            onPress={() => setShowMap(false)}
+          >
+            <Text style={styles.closeMapText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F9FAFB" },
-  errorText: { fontSize: 16, color: "red", textAlign: "center", marginTop: 20 },
+  safeArea: { flex: 1, backgroundColor: isDarkMode ? "#121212" : "#F9FAFB" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: "#fff",
+    paddingHorizontal: wp(5),
+    paddingBottom: hp(2),
+    backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: isDarkMode ? "#333" : "#E5E7EB",
     elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
   },
-  headerTitle: { fontSize: 22, fontWeight: "600", color: "#1F2937", letterSpacing: 0.5 },
+  headerTitle: {
+    fontSize: fontSize(20),
+    fontWeight: "600",
+    color: isDarkMode ? "#fff" : "#1F2937"
+  },
   iconButton: { padding: 8 },
   progressContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 20,
-    backgroundColor: "#fff",
+    padding: wp(5),
+    backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: isDarkMode ? "#333" : "#E5E7EB",
   },
   progressStep: { alignItems: "center", flex: 1 },
   progressCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(5),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
   },
   activeStep: { backgroundColor: "#007bff" },
-  inactiveStep: { backgroundColor: "#F3F4F6", borderWidth: 2, borderColor: "#E5E7EB" },
-  progressTextActive: { fontSize: 14, fontWeight: "500", color: "#007bff" },
-  progressText: { fontSize: 14, color: "#9CA3AF" },
-  progressLineContainer: { width: 60, height: 2, backgroundColor: "#E5E7EB", marginHorizontal: 4 },
+  inactiveStep: {
+    backgroundColor: isDarkMode ? "#2c2c2c" : "#F3F4F6",
+    borderWidth: 2,
+    borderColor: isDarkMode ? "#444" : "#E5E7EB"
+  },
+  progressTextActive: { fontSize: fontSize(12), fontWeight: "500", color: "#007bff" },
+  progressText: { fontSize: fontSize(12), color: isDarkMode ? "#888" : "#9CA3AF" },
+  progressLineContainer: {
+    width: wp(15),
+    height: 2,
+    backgroundColor: isDarkMode ? "#333" : "#E5E7EB",
+    marginHorizontal: 4
+  },
   animatedProgressLine: { height: 2, backgroundColor: "#007bff" },
-  container: { padding: 20 },
+  container: { padding: wp(5) },
   section: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
+    backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
+    borderRadius: 12,
+    padding: wp(4),
+    marginBottom: hp(2),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: isDarkMode ? 0.2 : 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  sectionTitle: { fontSize: 16, fontWeight: "bold", color: "#333", marginBottom: 15 },
-  row: { flexDirection: "row", justifyContent: "space-between" },
-  halfInput: { width: "48%" },
+  sectionTitle: {
+    fontSize: fontSize(16),
+    fontWeight: "bold",
+    color: isDarkMode ? "#fff" : "#333",
+    marginBottom: hp(1.5)
+  },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: isDarkMode ? "#2c2c2c" : "#fff",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: isDarkMode ? "#444" : "#ddd",
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    fontSize: 14,
-    color: "#333",
+    padding: wp(3.5),
+    marginBottom: hp(1.5),
+    fontSize: fontSize(14),
+    color: isDarkMode ? "#fff" : "#333",
   },
   disabledField: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: isDarkMode ? "#252525" : "#f5f5f5",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: isDarkMode ? "#333" : "#ddd",
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
+    padding: wp(3.5),
+    marginBottom: hp(1.5),
   },
-  disabledText: { color: "#666", fontSize: 14 },
-  note: { fontSize: 12, color: "#666", marginTop: -10, marginBottom: 15 },
-  bold: { fontWeight: "bold" },
-  checkboxContainer: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 1,
-    borderColor: "#007bff",
-    borderRadius: 4,
-    marginRight: 10,
-    justifyContent: "center",
+  disabledText: { color: isDarkMode ? "#aaa" : "#666", fontSize: fontSize(14) },
+  mapButton: {
+    backgroundColor: "#3b82f6",
+    flexDirection: 'row',
+    padding: wp(3.5),
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: hp(1.5),
+  },
+  mapButtonText: { color: "#fff", fontWeight: "600", fontSize: fontSize(14) },
+  coordinatesText: {
+    fontSize: fontSize(12),
+    color: "#3b82f6",
+    marginBottom: hp(1.5),
+    textAlign: 'center',
+    fontWeight: '500'
+  },
+  closeMapButton: {
+    position: 'absolute',
+    bottom: hp(5),
+    alignSelf: 'center',
+    backgroundColor: '#ff4d4f',
+    paddingHorizontal: wp(10),
+    paddingVertical: hp(1.5),
+    borderRadius: 30,
+  },
+  closeMapText: { color: '#fff', fontWeight: 'bold' },
+  placeOrderButton: {
+    backgroundColor: "#007bff",
+    borderRadius: 12,
+    padding: hp(2),
     alignItems: "center",
+    marginTop: hp(2),
+    marginBottom: hp(5),
   },
-  checkboxInner: { width: 12, height: 12, backgroundColor: "#007bff", borderRadius: 2 },
-  checkboxLabel: { color: "#333", fontSize: 14 },
+  placeOrderText: { color: "#fff", fontSize: fontSize(16), fontWeight: "bold" },
   methodCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: isDarkMode ? "#2c2c2c" : "#fff",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: isDarkMode ? "#444" : "#ddd",
     borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
+    padding: wp(4),
+    marginBottom: hp(1.5),
   },
+  methodTitle: { fontSize: fontSize(14), fontWeight: "bold", color: isDarkMode ? "#fff" : "#333" },
+  methodDescription: { fontSize: fontSize(12), color: isDarkMode ? "#aaa" : "#666" },
+  paymentMethod: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: wp(4),
+    backgroundColor: isDarkMode ? "#2c2c2c" : "#fff",
+    borderWidth: 1,
+    borderColor: isDarkMode ? "#444" : "#ddd",
+    borderRadius: 8,
+    marginBottom: hp(1.5),
+  },
+  paymentMethodText: { fontSize: fontSize(14), color: isDarkMode ? "#fff" : "#333", marginLeft: 15 },
+  itemName: { fontSize: fontSize(14), color: isDarkMode ? "#ddd" : "#333" },
+  itemPrice: { fontSize: fontSize(14), fontWeight: "bold", color: isDarkMode ? "#fff" : "#333" },
+  summaryRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: hp(1) },
+  summaryLabel: { fontSize: fontSize(14), color: isDarkMode ? "#aaa" : "#666" },
+  summaryValue: { fontSize: fontSize(14), color: isDarkMode ? "#fff" : "#333" },
+  totalLabel: { fontSize: fontSize(16), fontWeight: "bold", color: isDarkMode ? "#fff" : "#333" },
   radioButton: {
     width: 20,
     height: 20,
@@ -606,39 +702,7 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   radioSelected: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#007bff" },
-  methodDetails: { flex: 1 },
-  methodTitle: { fontSize: 14, fontWeight: "bold", color: "#333", marginBottom: 5 },
-  methodDescription: { fontSize: 12, color: "#666", marginBottom: 3 },
-  methodPrice: { fontSize: 14, color: "#007bff", fontWeight: "bold" },
-  paymentMethod: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 15,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  paymentMethodText: { fontSize: 14, color: "#333", marginLeft: 15 },
-  summaryText: { fontSize: 14, color: "#666", marginBottom: 15 },
-  itemContainer: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
-  itemName: { fontSize: 14, color: "#333" },
-  itemPrice: { fontSize: 14, fontWeight: "bold", color: "#333" },
-  summaryRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
-  summaryLabel: { fontSize: 14, color: "#666" },
-  summaryValue: { fontSize: 14, color: "#333" },
-  totalRow: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: "#eee" },
-  totalLabel: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  totalValue: { fontSize: 16, fontWeight: "bold", color: "#007bff" },
-  placeOrderButton: {
-    backgroundColor: "#007bff",
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  placeOrderText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  note: { fontSize: fontSize(12), color: "#666", marginTop: -10, marginBottom: 15 },
 });
 
 export default OnlineMedicinePurchase;

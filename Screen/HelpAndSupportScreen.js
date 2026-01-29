@@ -11,8 +11,13 @@ import {
   Platform,
   Alert,
   Image,
+  Modal,
+  FlatList,
+  ActivityIndicator,
+  StatusBar,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { wp, hp, fontSize } from "./responsive";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
   faEnvelope,
@@ -29,7 +34,8 @@ import Footer from "./Footer";
 const HelpAndSupportScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const insets = useSafeAreaInsets();
+  const styles = getStyles(isDarkMode, insets);
 
   // Contact action handlers
   const handleEmail = () => Linking.openURL("mailto:support@mediapp.com");
@@ -115,6 +121,7 @@ const HelpAndSupportScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
       <ScrollView contentContainerStyle={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -306,15 +313,15 @@ const HelpAndSupportScreen = () => {
 };
 
 // Updated styling with modern design
-const getStyles = (isDarkMode) => StyleSheet.create({
+const getStyles = (isDarkMode, insets = { top: 0, bottom: 0 }) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: isDarkMode ? "#121212" : "#f8f9fa",
   },
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingHorizontal: wp(4),
+    paddingBottom: hp(12) + insets.bottom,
   },
   header: {
     flexDirection: "row",
@@ -328,7 +335,7 @@ const getStyles = (isDarkMode) => StyleSheet.create({
     marginRight: 12,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: fontSize(22),
     fontWeight: "600",
     color: isDarkMode ? "#fff" : "#2d3436",
   },
@@ -342,7 +349,7 @@ const getStyles = (isDarkMode) => StyleSheet.create({
     marginBottom: 20,
   },
   heroText: {
-    fontSize: 20,
+    fontSize: fontSize(18),
     fontWeight: "500",
     textAlign: "center",
     color: isDarkMode ? "#fff" : "#2d3436",
@@ -368,7 +375,7 @@ const getStyles = (isDarkMode) => StyleSheet.create({
     elevation: 2,
   },
   gridText: {
-    fontSize: 16,
+    fontSize: fontSize(14),
     marginTop: 10,
     color: isDarkMode ? "#fff" : "#2d3436",
     fontWeight: "500",

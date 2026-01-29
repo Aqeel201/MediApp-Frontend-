@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Animated, Alert, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { wp, hp, fontSize } from './responsive';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ArrowLeft } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
 // Backend URLs
 const BASE_URL = 'https://dashboard-backend-xrss.vercel.app'; // change to your backend server
@@ -10,6 +14,8 @@ const SCORE_ENDPOINT = (userId) => `${BASE_URL}/api/game/score/${userId}`;
 const REDEEM_ENDPOINT = `${BASE_URL}/api/game/redeem`;
 
 export default function MedicineMatchGame() {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -128,9 +134,12 @@ export default function MedicineMatchGame() {
   }
 
   return (
-    <View style={styles.fullContainer}>
+    <View style={[styles.fullContainer, { paddingTop: insets.top + hp(1), paddingBottom: insets.bottom + hp(1) }]}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5 }}>
+            <ArrowLeft size={24} color="#000" />
+          </TouchableOpacity>
           <Text style={styles.header}>Medicine Match Challenge</Text>
           <View style={styles.info}>
             <Text style={styles.infoText}>Points: {points}</Text>
@@ -200,10 +209,10 @@ export default function MedicineMatchGame() {
 
 const styles = StyleSheet.create({
   fullContainer: { flex: 1, backgroundColor: '#fafafa' },
-  container: { padding: 16, flexGrow: 1 },
+  container: { padding: wp(4), flexGrow: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  header: { fontSize: 20, fontWeight: '700' },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: hp(2) },
+  header: { fontSize: fontSize(20), fontWeight: '700', flex: 1, marginLeft: 10 },
   info: { alignItems: 'flex-end' },
   infoText: { color: '#444' },
   medicineCard: { backgroundColor: '#fff', padding: 12, borderRadius: 8, marginTop: 12, borderWidth: 1, borderColor: '#eee' },

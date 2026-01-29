@@ -11,6 +11,7 @@ import { Image as ImageIcon, Mic, Paperclip, Camera, ArrowLeft } from 'lucide-re
 import { useTheme } from './ThemeContext';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
+import { wp, hp, fontSize } from './responsive';
 
 const VERCEL_URL = 'https://dashboard-backend-xrss.vercel.app';
 const LOCAL_URL = 'http://192.168.1.100:2000'; // Replace with your local IP
@@ -19,7 +20,7 @@ const SOCKET_URL = VERCEL_URL; // Toggle here
 const Chat = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
-  const styles = getStyles(isDarkMode);
+  const styles = getStyles(isDarkMode, insets);
 
   // Notification Handler Setup
   useEffect(() => {
@@ -545,12 +546,19 @@ const Chat = ({ navigation }) => {
 
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: isDarkMode ? '#1c1c1c' : '#fff' }]}>
+    <View style={styles.container}>
       <StatusBar
         barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor="transparent"
         translucent={true}
       />
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <ArrowLeft size={24} color={isDarkMode ? "white" : "#007AFF"} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Chat with Admin</Text>
+        <View style={{ width: 40 }} />
+      </View>
       <GiftedChat
         messages={messages}
         onSend={onSend}
@@ -566,22 +574,41 @@ const Chat = ({ navigation }) => {
   );
 };
 
-const getStyles = (isDarkMode) => StyleSheet.create({
+const getStyles = (isDarkMode, insets = { top: 0, bottom: 0 }) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: isDarkMode ? '#1c1c1c' : '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: wp(4),
+    paddingTop: insets.top + hp(1),
+    paddingBottom: hp(1.5),
+    backgroundColor: isDarkMode ? '#1c1c1c' : '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: isDarkMode ? '#333' : '#E5E5EA',
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: fontSize(20),
+    fontWeight: 'bold',
+    color: isDarkMode ? '#fff' : '#007AFF',
   },
   inputToolbar: {
     borderTopWidth: 1,
     borderTopColor: isDarkMode ? '#444' : '#E5E5EA',
     backgroundColor: isDarkMode ? '#1c1c1c' : '#fff',
-    padding: 5,
+    paddingBottom: insets.bottom > 0 ? insets.bottom - 10 : 0, // Ensure gap on bottom for home indicator
   },
   actionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 10,
-    gap: 10,
+    gap: wp(3),
   },
   fileContainer: {
     padding: 10,
@@ -590,7 +617,7 @@ const getStyles = (isDarkMode) => StyleSheet.create({
   },
   fileText: {
     color: '#007AFF',
-    fontSize: 14,
+    fontSize: fontSize(14),
   },
 });
 

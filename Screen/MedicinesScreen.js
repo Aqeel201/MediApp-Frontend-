@@ -10,14 +10,16 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { MaterialIcons, Feather, Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, ShoppingCart, Heart, Activity, Frown, CheckCircle } from 'lucide-react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from "@react-navigation/native";
 import { useTheme } from './ThemeContext';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CartContext } from './CartContext';
+import { wp, hp, fontSize } from './responsive';
 
 const MedicineScreen = () => {
   const navigation = useNavigation();
@@ -174,7 +176,7 @@ const MedicineScreen = () => {
     </TouchableOpacity>
   );
 
-  const styles = getStyles(isDarkMode);
+  const styles = getStyles(isDarkMode, insets);
 
   // Show loading spinner while the page is loading
   if (isPageLoading) {
@@ -202,7 +204,7 @@ const MedicineScreen = () => {
         colors={isDarkMode ? ['#121212', '#1c1c1c'] : ['#f8fafc', '#ffffff']}
         style={styles.errorContainer}
       >
-        <Ionicons name="sad-outline" size={64} color="#3b82f6" />
+        <Frown size={64} color="#3b82f6" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity onPress={fetchMedicines} style={styles.retryButton}>
           <Text style={styles.retryButtonText}>Try Again</Text>
@@ -224,7 +226,7 @@ const MedicineScreen = () => {
       {/* Fixed Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={28} color={isDarkMode ? '#fff' : '#3b82f6'} />
+          <ArrowLeft size={28} color={isDarkMode ? '#fff' : '#3b82f6'} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Medicines</Text>
 
@@ -232,7 +234,7 @@ const MedicineScreen = () => {
           style={styles.cartButton}
           onPress={() => navigation.navigate('OnlineMedicinePurchase')}
         >
-          <Ionicons name="cart-outline" size={28} color={isDarkMode ? '#fff' : '#3b82f6'} />
+          <ShoppingCart size={28} color={isDarkMode ? '#fff' : '#3b82f6'} />
           {cartCount > 0 && (
             <View style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -243,7 +245,9 @@ const MedicineScreen = () => {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <Feather name="search" size={20} color={isDarkMode ? '#94a3b8' : '#64748b'} style={styles.searchIcon} />
+        <View style={styles.searchIcon}>
+          <Activity size={20} color={isDarkMode ? '#94a3b8' : '#64748b'} />
+        </View>
         <TextInput
           style={styles.searchInput}
           placeholder="Search medicines or categories..."
@@ -282,16 +286,16 @@ const MedicineScreen = () => {
                   <Image source={{ uri: imageUri }} style={styles.medicineImage} />
                 ) : (
                   <View style={styles.imagePlaceholder}>
-                    <MaterialIcons name="medication" size={32} color={isDarkMode ? '#374151' : '#cbd5e1'} />
+                    <Activity size={32} color={isDarkMode ? '#374151' : '#cbd5e1'} />
                   </View>
                 )}
                 <View style={styles.medicineInfo}>
                   <View style={styles.infoHeader}>
                     <Text style={styles.medicineName} numberOfLines={1}>{item.name}</Text>
                     <TouchableOpacity style={styles.favoriteButton} onPress={() => handleLikeToggle(item._id || item.id)}>
-                      <Ionicons
-                        name={item.liked ? 'heart' : 'heart-outline'}
+                      <Heart
                         size={20}
+                        fill={item.liked ? '#e0245e' : 'transparent'}
                         color={item.liked ? '#e0245e' : isDarkMode ? '#94a3b8' : '#64748b'}
                       />
                     </TouchableOpacity>
@@ -299,7 +303,7 @@ const MedicineScreen = () => {
                   <Text style={styles.medicineDosage} numberOfLines={1}>{item.dosage}</Text>
                   <View style={styles.metaContainer}>
                     <View style={styles.stockContainer}>
-                      <Ionicons name="checkmark-circle" size={16} color={color} />
+                      <CheckCircle size={16} color={color} />
                       <Text style={[styles.stockStatus, { color }]}>{status}</Text>
                     </View>
                     <Text style={styles.medicinePrice}>₨{item.price}</Text>
@@ -327,7 +331,7 @@ const MedicineScreen = () => {
   );
 };
 
-const getStyles = (isDarkMode) =>
+const getStyles = (isDarkMode, insets = { top: 0, bottom: 0, left: 0, right: 0 }) =>
   StyleSheet.create({
     container: { flex: 1 },
     loadingContainer: {
@@ -338,7 +342,7 @@ const getStyles = (isDarkMode) =>
     },
     loadingText: {
       marginTop: 10,
-      fontSize: 18,
+      fontSize: fontSize(18),
       fontWeight: '500',
     },
     errorContainer: {
@@ -366,14 +370,14 @@ const getStyles = (isDarkMode) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 24,
-      paddingBottom: 16,
+      paddingHorizontal: wp(6),
+      paddingBottom: hp(2),
       borderBottomWidth: 1,
       borderBottomColor: isDarkMode ? '#2d2d2d' : '#e2e8f0',
       backgroundColor: isDarkMode ? '#1c1c1c' : '#fff',
     },
     backButton: { marginRight: 8 },
-    headerTitle: { fontSize: 28, fontWeight: '700', color: isDarkMode ? '#fff' : '#1e293b' },
+    headerTitle: { fontSize: fontSize(24), fontWeight: '700', color: isDarkMode ? '#fff' : '#1e293b' },
     cartButton: {
       marginLeft: 8,
       position: 'relative',
@@ -398,11 +402,11 @@ const getStyles = (isDarkMode) =>
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: isDarkMode ? '#2d2d2d' : '#fff',
-      borderRadius: 16,
-      marginHorizontal: 24,
-      marginVertical: 16,
-      paddingHorizontal: 20,
-      height: 56,
+      borderRadius: wp(4),
+      marginHorizontal: wp(6),
+      marginVertical: hp(2),
+      paddingHorizontal: wp(4),
+      height: hp(7),
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
@@ -413,9 +417,9 @@ const getStyles = (isDarkMode) =>
     searchInput: {
       flex: 1,
       height: '100%',
-      fontSize: 16,
+      fontSize: fontSize(16),
       color: isDarkMode ? '#fff' : '#1e293b',
-      marginHorizontal: 12,
+      marginHorizontal: wp(3),
     },
     tabBar: {
       flexDirection: 'row',
@@ -438,9 +442,9 @@ const getStyles = (isDarkMode) =>
     categoryTabTextActive: { color: '#fff', fontWeight: '600' },
     dynamicTabs: { paddingVertical: 4 },
     medicineList: {
-      paddingBottom: 24,
-      paddingTop: 16,
-      paddingHorizontal: 24,
+      paddingBottom: hp(12) + insets.bottom,
+      paddingTop: hp(2),
+      paddingHorizontal: wp(6),
     },
     medicineCard: {
       borderRadius: 20,
@@ -455,24 +459,24 @@ const getStyles = (isDarkMode) =>
       borderColor: isDarkMode ? '#2a2a2a' : '#f0f0f0',
     },
     cardContent: { flexDirection: 'row', alignItems: 'center' },
-    medicineImage: { width: 80, height: 80, borderRadius: 12, marginRight: 16 },
+    medicineImage: { width: wp(20), height: wp(20), borderRadius: wp(3), marginRight: wp(4) },
     imagePlaceholder: {
-      width: 80,
-      height: 80,
-      borderRadius: 12,
+      width: wp(20),
+      height: wp(20),
+      borderRadius: wp(3),
       backgroundColor: isDarkMode ? '#2d2d2d' : '#f1f5f9',
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 16,
+      marginRight: wp(4),
     },
     medicineInfo: { flex: 1 },
     infoHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-    medicineName: { fontSize: 18, fontWeight: '600', color: isDarkMode ? '#fff' : '#1e293b', flex: 1 },
-    medicineDosage: { fontSize: 14, color: isDarkMode ? '#94a3b8' : '#64748b', marginBottom: 12 },
+    medicineName: { fontSize: fontSize(18), fontWeight: '600', color: isDarkMode ? '#fff' : '#1e293b', flex: 1 },
+    medicineDosage: { fontSize: fontSize(14), color: isDarkMode ? '#94a3b8' : '#64748b', marginBottom: hp(1) },
     metaContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     stockContainer: { flexDirection: 'row', alignItems: 'center' },
     stockStatus: { fontSize: 13, marginLeft: 6 },
-    medicinePrice: { fontSize: 18, fontWeight: '700', color: '#3b82f6' },
+    medicinePrice: { fontSize: fontSize(18), fontWeight: '700', color: '#3b82f6' },
     categoryBadge: {
       alignSelf: 'flex-start',
       backgroundColor: isDarkMode ? '#3b82f622' : '#3b82f611',

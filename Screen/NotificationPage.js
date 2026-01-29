@@ -10,14 +10,8 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import {
-  faArrowLeft,
-  faBell,
-  faHome,
-  faShoppingBag,
-  faUser
-} from "@fortawesome/free-solid-svg-icons";
+import { Bell, ArrowLeft, Home, ShoppingBag, User } from 'lucide-react-native';
+import { wp, hp, fontSize } from "./responsive";
 import { useTheme } from "./ThemeContext";
 import Footer from "./Footer"; // Import the reusable Footer component
 
@@ -55,10 +49,9 @@ const NotificationPage = () => {
         animated={true}
       />
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <FontAwesomeIcon
-            icon={faArrowLeft}
+      <View style={[styles.header, { paddingTop: insets.top + wp(5) }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5 }}>
+          <ArrowLeft
             size={24}
             color={isDarkMode ? "white" : "#0d6efd"}
           />
@@ -84,7 +77,7 @@ const NotificationPage = () => {
   );
 };
 
-const getStyles = (isDarkMode, insets) => StyleSheet.create({
+const getStyles = (isDarkMode, insets = { top: 0, bottom: 0 }) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: isDarkMode ? "#1c1c1c" : "white",
@@ -92,19 +85,19 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
+    padding: wp(5),
     borderBottomWidth: 1,
     borderBottomColor: isDarkMode ? "#444" : "#eaeaea",
   },
   headerText: {
     marginLeft: 10,
-    fontSize: 20,
+    fontSize: fontSize(20),
     fontWeight: "bold",
     color: isDarkMode ? "white" : "#0d6efd",
   },
   scrollView: {
-    padding: 20,
-    marginBottom: 70, // leave space for the footer
+    padding: wp(5),
+    marginBottom: hp(10), // leave space for the footer
   },
   notificationItem: {
     padding: 20,

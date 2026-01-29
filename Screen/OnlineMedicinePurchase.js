@@ -15,17 +15,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import {
-  faBell,
-  faArrowLeft,
-  faPlus,
-  faMinus,
-  faTrash,
-  faShoppingCart,
-  faCreditCard,
-  faCheckCircle,
-} from "@fortawesome/free-solid-svg-icons";
+import { Bell, ArrowLeft, Plus, Minus, Trash, ShoppingCart, CreditCard, CheckCircle } from 'lucide-react-native';
+import { wp, hp, fontSize } from "./responsive";
 import { CartContext } from "./CartContext";
 import { useTheme } from "./ThemeContext";
 import Footer from "./Footer";
@@ -108,13 +99,13 @@ const ProductCartScreen = () => {
       />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + wp(5) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <FontAwesomeIcon icon={faArrowLeft} size={24} color={isDarkMode ? "#fff" : "#007bff"} />
+          <ArrowLeft size={24} color={isDarkMode ? "#fff" : "#007bff"} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Your Cart</Text>
         <TouchableOpacity style={styles.iconButton}>
-          <FontAwesomeIcon icon={faBell} size={24} color={isDarkMode ? "#fff" : "#007bff"} />
+          <Bell size={24} color={isDarkMode ? "#fff" : "#007bff"} />
         </TouchableOpacity>
       </View>
 
@@ -123,7 +114,7 @@ const ProductCartScreen = () => {
         {/* Step 1: Cart */}
         <View style={styles.progressStep}>
           <View style={[styles.progressCircle, styles.activeStep]}>
-            <FontAwesomeIcon icon={faShoppingCart} size={20} color="#fff" />
+            <ShoppingCart size={20} color="#fff" />
           </View>
           <Text style={styles.progressTextActive}>Cart</Text>
         </View>
@@ -135,7 +126,7 @@ const ProductCartScreen = () => {
               {
                 width: progressAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0, 60],
+                  outputRange: [0, wp(15)],
                 }),
               },
             ]}
@@ -144,7 +135,7 @@ const ProductCartScreen = () => {
         {/* Step 2: Checkout */}
         <View style={styles.progressStep}>
           <View style={[styles.progressCircle, styles.inactiveStep]}>
-            <FontAwesomeIcon icon={faCreditCard} size={20} color={isDarkMode ? "#555" : "#ccc"} />
+            <CreditCard size={20} color={isDarkMode ? "#555" : "#ccc"} />
           </View>
           <Text style={styles.progressText}>Checkout</Text>
         </View>
@@ -153,7 +144,7 @@ const ProductCartScreen = () => {
         {/* Step 3: Confirmation */}
         <View style={styles.progressStep}>
           <View style={[styles.progressCircle, styles.inactiveStep]}>
-            <FontAwesomeIcon icon={faCheckCircle} size={20} color={isDarkMode ? "#555" : "#ccc"} />
+            <CheckCircle size={20} color={isDarkMode ? "#555" : "#ccc"} />
           </View>
           <Text style={styles.progressText}>Confirmation</Text>
         </View>
@@ -163,7 +154,7 @@ const ProductCartScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {cartItems.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <FontAwesomeIcon icon={faShoppingCart} size={80} color={isDarkMode ? "#333" : "#e0e0e0"} />
+            <ShoppingCart size={wp(20)} color={isDarkMode ? "#333" : "#e0e0e0"} />
             <Text style={styles.emptyText}>Your cart is empty</Text>
           </View>
         ) : (
@@ -202,14 +193,14 @@ const ProductCartScreen = () => {
                           style={styles.quantityButton}
                           onPress={() => handleQuantityChange(item._id || item.id, "decrease")}
                         >
-                          <FontAwesomeIcon icon={faMinus} size={16} color="#007bff" />
+                          <Minus size={16} color="#007bff" />
                         </TouchableOpacity>
                         <Text style={styles.quantityText}>{item.cartQuantity}</Text>
                         <TouchableOpacity
                           style={styles.quantityButton}
                           onPress={() => handleQuantityChange(item._id || item.id, "increase")}
                         >
-                          <FontAwesomeIcon icon={faPlus} size={16} color="#007bff" />
+                          <Plus size={16} color="#007bff" />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -220,7 +211,7 @@ const ProductCartScreen = () => {
                     style={styles.removeButton}
                     onPress={() => handleRemoveItem(item._id || item.id)}
                   >
-                    <FontAwesomeIcon icon={faTrash} size={20} color="#ff4d4f" />
+                    <Trash size={20} color="#ff4d4f" />
                   </TouchableOpacity>
                 </View>
               );
@@ -284,7 +275,7 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: fontSize(20),
     fontWeight: "600",
     color: isDarkMode ? "#fff" : "#1F2937",
     letterSpacing: 0.5,
@@ -296,7 +287,7 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 20,
+    padding: wp(5),
     backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
     borderBottomWidth: 1,
     borderBottomColor: isDarkMode ? "#333" : "#E5E7EB",
@@ -306,9 +297,9 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     flex: 1,
   },
   progressCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: wp(9),
+    height: wp(9),
+    borderRadius: wp(4.5),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
@@ -322,16 +313,16 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     borderColor: isDarkMode ? "#444" : "#E5E7EB",
   },
   progressTextActive: {
-    fontSize: 14,
+    fontSize: fontSize(12),
     fontWeight: "500",
     color: "#007bff",
   },
   progressText: {
-    fontSize: 14,
+    fontSize: fontSize(12),
     color: isDarkMode ? "#888" : "#9CA3AF",
   },
   progressLineContainer: {
-    width: 60,
+    width: wp(15),
     height: 2,
     backgroundColor: isDarkMode ? "#333" : "#E5E7EB",
     marginHorizontal: 4,
@@ -347,8 +338,8 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     marginHorizontal: 4,
   },
   scrollContainer: {
-    padding: 20,
-    paddingBottom: 100, // Account for Footer
+    padding: wp(4.5),
+    paddingBottom: hp(12) + insets.bottom,
   },
   emptyContainer: {
     flex: 1,
@@ -376,15 +367,15 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   productImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: wp(18),
+    height: wp(18),
+    borderRadius: wp(2),
     marginRight: 16,
   },
   imagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: wp(18),
+    height: wp(18),
+    borderRadius: wp(2),
     backgroundColor: isDarkMode ? "#2c2c2c" : "#F3F4F6",
     justifyContent: "center",
     alignItems: "center",

@@ -181,7 +181,6 @@ const getStyles = (width = 375, height = 667) => StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     marginBottom: 15,
-    fontFamily: 'Montserrat-Bold',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
@@ -195,7 +194,6 @@ const getStyles = (width = 375, height = 667) => StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 20,
     lineHeight: 26,
-    fontFamily: 'Montserrat-Medium',
   },
   button: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -219,7 +217,6 @@ const getStyles = (width = 375, height = 667) => StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'Montserrat-SemiBold',
   },
   dot: {
     width: 10,

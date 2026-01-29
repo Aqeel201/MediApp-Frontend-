@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from './ThemeContext';
 import * as Updates from 'expo-updates'; // Import expo-updates for app restart
 import Button from './Button'; // Assuming Button is a custom component
+import { wp, hp, fontSize } from './responsive';
 
 const ResetScreen = () => {
   const { width, height } = useWindowDimensions();
@@ -91,30 +92,30 @@ const ResetScreen = () => {
 const getStyles = (width, height) => StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: width * 0.05,
-    paddingVertical: height * 0.02,
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(2),
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: height * 0.03,
+    marginBottom: hp(3),
   },
   headerTitle: {
-    fontSize: width * 0.06,
+    fontSize: fontSize(22),
     fontWeight: 'bold',
-    marginLeft: 10,
+    marginLeft: wp(3),
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: width * 0.05,
+    paddingHorizontal: wp(5),
   },
   message: {
-    fontSize: width * 0.045,
+    fontSize: fontSize(16),
     textAlign: 'center',
-    lineHeight: height * 0.03,
-    marginBottom: height * 0.03,
+    lineHeight: hp(3),
+    marginBottom: hp(3),
   },
 });
 

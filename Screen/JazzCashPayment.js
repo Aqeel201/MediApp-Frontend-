@@ -24,6 +24,18 @@ const DepositScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { orderData } = route.params || {};
+  const [transactionConfirmed, setTransactionConfirmed] = useState(false);
+
+  // Handle cancelled/aborted transaction
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (transactionConfirmed) return;
+
+      // Log cancelled transaction
+      console.log("Transaction aborted by navigation");
+    });
+    return unsubscribe;
+  }, [navigation, transactionConfirmed]);
   const cartItems = orderData?.cartItems || [];
   const depositAmount =
     orderData && typeof orderData.orderTotal === "number"
@@ -132,6 +144,7 @@ const DepositScreen = () => {
         orderData, // orderData must include orderId
       });
       console.log("Transaction submitted:", response.data);
+      setTransactionConfirmed(true);
       Alert.alert("Success", "Transaction submitted successfully!");
       setTransactionTime(new Date());
       setSubmittedTransaction(response.data);

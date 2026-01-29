@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from './ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from './Button'; // Import the Button component
+import { wp, hp, fontSize } from './responsive';
 import { Fingerprint, Bell, Moon, Sun, Languages, User, Lock, MapPin, Trash2, ArrowLeft } from 'lucide-react-native';
 
 const SettingsScreen = () => {
@@ -46,7 +47,7 @@ const SettingsScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? '#1c1c1c' : 'white', paddingTop: insets.top }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} backgroundColor="transparent" translucent={true} />
       <ScrollView contentContainerStyle={[styles.scrollContainer, { paddingBottom: insets.bottom + 20 }]}>
         {/* Header */}
         <View style={styles.header}>
@@ -162,18 +163,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContainer: {
-    padding: 20,
+    padding: wp(5),
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: hp(3),
   },
   backButton: {
     padding: 5,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: fontSize(22),
     fontWeight: 'bold',
     marginLeft: 15,
   },
@@ -181,10 +182,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: hp(2.5),
   },
   text: {
-    fontSize: 18,
+    fontSize: fontSize(16),
   },
   modalContainer: {
     flex: 1,

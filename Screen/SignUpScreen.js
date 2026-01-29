@@ -7,9 +7,11 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from './ThemeContext';
 import axios from 'axios';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { User, CreditCard, Mail, Lock, Eye, EyeOff, Camera } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { wp, hp, fontSize } from './responsive';
+import { StatusBar } from 'expo-status-bar';
 
 const defaultTheme = {
   colors: {
@@ -53,12 +55,12 @@ const SignUpScreen = () => {
   const pickProfileImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Please allow access to your photos to upload a profile picture.');
+      Alert.alert('Permission Denied', 'We need camera roll permissions to upload profile picture.');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -165,8 +167,7 @@ const SignUpScreen = () => {
             />
           ) : (
             <View style={styles(theme).imagePlaceholder}>
-              <FontAwesome
-                name="camera"
+              <Camera
                 size={32}
                 color={theme.colors.primary}
               />
@@ -180,8 +181,7 @@ const SignUpScreen = () => {
         <View style={styles(theme).formContainer}>
           <View style={styles(theme).nameRow}>
             <View style={[styles(theme).inputWrapper, styles(theme).nameInput]}>
-              <FontAwesome
-                name="user-o"
+              <User
                 size={16}
                 style={styles(theme).icon}
               />
@@ -195,8 +195,7 @@ const SignUpScreen = () => {
             </View>
             <View style={styles(theme).spacer} />
             <View style={[styles(theme).inputWrapper, styles(theme).nameInput]}>
-              <FontAwesome
-                name="user-o"
+              <User
                 size={16}
                 style={styles(theme).icon}
               />
@@ -211,8 +210,7 @@ const SignUpScreen = () => {
           </View>
 
           <View style={styles(theme).inputWrapper}>
-            <FontAwesome
-              name="id-card"
+            <CreditCard
               size={16}
               style={styles(theme).icon}
             />
@@ -227,8 +225,7 @@ const SignUpScreen = () => {
           </View>
 
           <View style={styles(theme).inputWrapper}>
-            <FontAwesome
-              name="envelope-o"
+            <Mail
               size={16}
               style={styles(theme).icon}
             />
@@ -247,8 +244,7 @@ const SignUpScreen = () => {
           </View>
 
           <View style={styles(theme).inputWrapper}>
-            <FontAwesome
-              name="lock"
+            <Lock
               size={18}
               style={styles(theme).icon}
             />
@@ -265,17 +261,16 @@ const SignUpScreen = () => {
               style={styles(theme).eyeIcon}
               onPress={() => setShowPassword(!showPassword)}
             >
-              <FontAwesome
-                name={showPassword ? "eye" : "eye-slash"}
-                size={18}
-                color={theme.colors.textSecondary}
-              />
+              {showPassword ? (
+                <Eye size={18} color={theme.colors.textSecondary} />
+              ) : (
+                <EyeOff size={18} color={theme.colors.textSecondary} />
+              )}
             </TouchableOpacity>
           </View>
 
           <View style={styles(theme).inputWrapper}>
-            <FontAwesome
-              name="lock"
+            <Lock
               size={18}
               style={styles(theme).icon}
             />
@@ -292,11 +287,11 @@ const SignUpScreen = () => {
               style={styles(theme).eyeIcon}
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
-              <FontAwesome
-                name={showConfirmPassword ? "eye" : "eye-slash"}
-                size={18}
-                color={theme.colors.textSecondary}
-              />
+              {showConfirmPassword ? (
+                <Eye size={18} color={theme.colors.textSecondary} />
+              ) : (
+                <EyeOff size={18} color={theme.colors.textSecondary} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -335,40 +330,40 @@ const styles = (theme = defaultTheme) => StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    padding: 20,
-    paddingTop: 25,
+    padding: wp(5),
+    paddingTop: hp(4),
   },
   header: {
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: hp(2),
   },
   logo: {
-    width: 150,
-    height: 150,
-    marginBottom: -40,
+    width: wp(40),
+    height: wp(40),
+    marginBottom: -hp(5),
   },
   title: {
-    fontSize: 22,
+    fontSize: fontSize(22),
     fontWeight: '600',
     color: theme.colors.primary,
     letterSpacing: 0.5,
-    marginTop: 5,
+    marginTop: hp(0.5),
   },
   imagePicker: {
     alignSelf: 'center',
-    marginBottom: 25,
+    marginBottom: hp(3),
   },
   profileImage: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: wp(28),
+    height: wp(28),
+    borderRadius: wp(14),
     borderWidth: 2,
     borderColor: theme.colors.primary,
   },
   imagePlaceholder: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: wp(28),
+    height: wp(28),
+    borderRadius: wp(14),
     backgroundColor: theme.colors.inputBackground,
     justifyContent: 'center',
     alignItems: 'center',
@@ -377,54 +372,54 @@ const styles = (theme = defaultTheme) => StyleSheet.create({
   },
   imagePickerText: {
     color: theme.colors.primary,
-    marginTop: 6,
-    fontSize: 13,
+    marginTop: hp(0.8),
+    fontSize: fontSize(13),
     fontWeight: '500',
   },
   formContainer: {
-    marginBottom: 15,
+    marginBottom: hp(2),
   },
   nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: hp(1.2),
   },
   nameInput: {
     flex: 1,
     maxWidth: '48%',
   },
   spacer: {
-    width: 10,
+    width: wp(2),
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.inputBackground,
     borderRadius: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    paddingHorizontal: wp(3),
+    marginBottom: hp(1.5),
     borderWidth: 1,
     borderColor: theme.colors.inputBorder,
   },
   icon: {
-    marginRight: 10,
+    marginRight: wp(2.5),
     color: theme.colors.textSecondary,
   },
   input: {
     flex: 1,
-    height: 48,
+    height: hp(6),
     color: theme.colors.textPrimary,
-    fontSize: 15,
+    fontSize: fontSize(15),
     paddingVertical: 0,
   },
   eyeIcon: {
-    padding: 6,
-    marginLeft: 4,
+    padding: wp(1.5),
+    marginLeft: wp(1),
   },
   submitButton: {
     backgroundColor: theme.colors.primary,
     borderRadius: 10,
-    height: 50,
+    height: hp(6.5),
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: theme.colors.primary,
@@ -432,29 +427,31 @@ const styles = (theme = defaultTheme) => StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 2,
-    marginTop: 15,
+    marginTop: hp(2),
   },
   disabledButton: {
     opacity: 0.7,
   },
   buttonText: {
     color: theme.colors.background,
-    fontSize: 17,
+    fontSize: fontSize(17),
     fontWeight: '600',
     letterSpacing: 0.4,
   },
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: hp(2.5),
+    marginBottom: hp(3),
   },
   loginText: {
     color: theme.colors.textSecondary,
-    fontSize: 14,
+    fontSize: fontSize(14),
   },
   loginLink: {
     color: theme.colors.primary,
     fontWeight: '600',
+    fontSize: fontSize(14),
   },
 });
 

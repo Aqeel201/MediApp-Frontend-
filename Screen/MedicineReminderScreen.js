@@ -15,11 +15,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Bell, Plus, Trash, AlertCircle, Clock, Calendar } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
+import { wp, hp, fontSize } from './responsive';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from './ThemeContext';
 
 export default function MedicineReminderScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { isDarkMode } = useTheme();
   const API_BASE = 'https://dashboard-backend-xrss.vercel.app';
   const [authToken, setAuthToken] = useState(null);
   const [medicines, setMedicines] = useState([]);
@@ -94,13 +100,24 @@ export default function MedicineReminderScreen() {
       Alert.alert('Error', 'Please select or enter a medicine and dosage');
       return;
     }
+
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Please enable notifications to use reminders.');
+      return;
+    }
+
+    const medName = selectedMedicine
+      ? medicines.find(m => m._id === selectedMedicine)?.name
+      : customMedicine;
+
     try {
       const config = { headers: { Authorization: `Bearer ${authToken}` } };
-      await axios.post(
+      const response = await axios.post(
         `${API_BASE}/api/reminders`,
         {
           medicineId: selectedMedicine || null,
-          medicineName: customMedicine || null,
+          medicineName: medName,
           dosage,
           time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           date,
@@ -109,12 +126,31 @@ export default function MedicineReminderScreen() {
         },
         config
       );
+
+      // Schedule local notification
+      const trigger = new Date(date);
+      trigger.setHours(time.getHours());
+      trigger.setMinutes(time.getMinutes());
+      trigger.setSeconds(0);
+
+      if (trigger > new Date()) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: `Medicine Reminder: ${medName}`,
+            body: `It's time to take ${dosage}. ${notes || ''}`,
+            data: { reminderId: response.data._id },
+          },
+          trigger,
+        });
+      }
+
       fetchReminders();
       setSelectedMedicine('');
       setCustomMedicine('');
       setDosage('');
       setNotes('');
       setRepeat('None');
+      Alert.alert('Success', 'Reminder added perfectly!');
     } catch (err) {
       console.error('Add Reminder Error:', err);
     }
@@ -142,7 +178,7 @@ export default function MedicineReminderScreen() {
   if (error) {
     return (
       <LinearGradient colors={['#f8fafc', '#ffffff']} style={styles.errorContainer}>
-        <Ionicons name="alert-circle-outline" size={48} color="#3b82f6" />
+        <AlertCircle size={48} color="#3b82f6" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
           <Text style={styles.retryButtonText}>Try Again</Text>
@@ -152,25 +188,27 @@ export default function MedicineReminderScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + hp(1), paddingBottom: insets.bottom + hp(2) }]}>
       {/* Header with Back Button */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={28} color="#000" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5 }}>
+          <ArrowLeft size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Medicine Reminders</Text>
       </View>
-      {/* Medicine Picker */}
-      <Picker
-        selectedValue={selectedMedicine}
-        onValueChange={(value) => setSelectedMedicine(value)}
-        style={styles.picker}
-      >
-        <Picker.Item label="Select Medicine" value="" />
-        {medicines.map((med) => (
-          <Picker.Item key={med._id} label={`${med.name} (${med.dosage})`} value={med._id} />
-        ))}
-      </Picker>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={selectedMedicine}
+          onValueChange={(value) => setSelectedMedicine(value)}
+          style={styles.picker}
+          dropdownIconColor={isDarkMode ? "#fff" : "#000"}
+        >
+          <Picker.Item label="Select Store Medicine" value="" />
+          {medicines.map((med) => (
+            <Picker.Item key={med._id} label={`${med.name} (${med.dosage || 'No Dosage'})`} value={med._id} />
+          ))}
+        </Picker>
+      </View>
       {/* Or enter custom medicine */}
       <TextInput
         placeholder="Or enter custom medicine name"
@@ -239,96 +277,180 @@ export default function MedicineReminderScreen() {
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={styles.reminderCard}>
-            <Text style={styles.reminderText}>
-              {item.medicineName} - {item.dosage}
-            </Text>
-            <Text style={styles.reminderSubText}>
-              {new Date(item.date).toDateString()} at {item.time}
-            </Text>
-            {item.notes ? <Text style={{ color: '#777' }}>Notes: {item.notes}</Text> : null}
-            <TouchableOpacity onPress={() => deleteReminder(item._id)}>
-              <Text style={styles.deleteText}>Delete</Text>
-            </TouchableOpacity>
+            <View style={styles.reminderHeader}>
+              <Text style={styles.reminderText}>
+                {item.medicineName}
+              </Text>
+              <TouchableOpacity onPress={() => deleteReminder(item._id)} style={styles.deleteButton}>
+                <Trash size={20} color="#ff4d4f" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.reminderDetails}>
+              <View style={styles.detailRow}>
+                <Clock size={16} color={isDarkMode ? "#aaa" : "#666"} />
+                <Text style={styles.reminderSubText}> {item.time}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Calendar size={16} color={isDarkMode ? "#aaa" : "#666"} />
+                <Text style={styles.reminderSubText}> {new Date(item.date).toDateString()}</Text>
+              </View>
+              <Text style={styles.dosageText}>{item.dosage}</Text>
+            </View>
+            {item.notes ? (
+              <View style={styles.notesContainer}>
+                <Text style={styles.notesText}>Note: {item.notes}</Text>
+              </View>
+            ) : null}
           </View>
         )}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#3b82f6']} />
         }
+        contentContainerStyle={{ paddingBottom: hp(5) }}
       />
-      {/* Watermark */}
-      <View style={styles.watermarkContainer}>
-        <Text style={styles.watermarkText}>
-          In Development - Functionality May Be Incomplete
-        </Text>
-      </View>
+      {/* No Watermark - Removed "In Development" */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, flex: 1, backgroundColor: '#f9f9f9' },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', marginLeft: 10 },
-  picker: { backgroundColor: '#fff', marginBottom: 10 },
-  input: {
+  container: {
+    padding: wp(5),
+    flex: 1,
+    backgroundColor: isDarkMode ? '#121212' : '#f8fafc'
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: hp(2.5),
+    justifyContent: 'space-between'
+  },
+  headerTitle: {
+    fontSize: fontSize(22),
+    fontWeight: 'bold',
+    color: isDarkMode ? '#fff' : '#1F2937'
+  },
+  pickerContainer: {
+    backgroundColor: isDarkMode ? '#1e1e1e' : '#fff',
+    borderRadius: 12,
+    marginBottom: hp(1.5),
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    backgroundColor: '#fff',
-    marginBottom: 10,
-    borderRadius: 5,
+    borderColor: isDarkMode ? '#333' : '#e2e8f0',
+    overflow: 'hidden',
+  },
+  picker: {
+    height: hp(6),
+    color: isDarkMode ? '#fff' : '#333',
+  },
+  input: {
+    backgroundColor: isDarkMode ? '#1e1e1e' : '#fff',
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#333' : '#e2e8f0',
+    padding: wp(4),
+    marginBottom: hp(1.5),
+    borderRadius: 12,
+    fontSize: fontSize(16),
+    color: isDarkMode ? '#fff' : '#333',
   },
   button: {
-    backgroundColor: '#ddd',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: isDarkMode ? '#2d3748' : '#e2e8f0',
+    padding: wp(4),
+    borderRadius: 12,
+    marginBottom: hp(1.5),
   },
-  buttonText: { fontSize: 16 },
+  buttonText: {
+    fontSize: fontSize(15),
+    color: isDarkMode ? '#fff' : '#1a202c',
+    fontWeight: '500'
+  },
   addButton: {
-    backgroundColor: '#28a745',
-    padding: 12,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  addButtonText: { color: '#fff', fontWeight: 'bold' },
-  reminderCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 5,
-    marginBottom: 10,
-    elevation: 2,
-  },
-  reminderText: { fontSize: 16, fontWeight: 'bold' },
-  reminderSubText: { color: '#555', marginVertical: 5 },
-  deleteText: { color: 'red' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 10, fontSize: 16 },
-  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  errorText: { marginVertical: 10, fontSize: 16, textAlign: 'center' },
-  retryButton: {
     backgroundColor: '#3b82f6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryButtonText: { color: '#fff', fontWeight: 'bold' },
-  watermarkContainer: {
-    position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
+    padding: hp(2),
+    borderRadius: 12,
     alignItems: 'center',
-    opacity: 0.6,
+    marginBottom: hp(3),
+    shadowColor: "#3b82f6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  watermarkText: {
-    fontSize: 12,
-    color: '#888',
+  addButtonText: {
+    color: '#fff',
+    fontSize: fontSize(17),
+    fontWeight: 'bold'
+  },
+  reminderCard: {
+    backgroundColor: isDarkMode ? '#1e1e1e' : '#fff',
+    padding: wp(4.5),
+    borderRadius: 16,
+    marginBottom: hp(2),
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  reminderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: hp(1),
+  },
+  reminderText: {
+    fontSize: fontSize(18),
+    fontWeight: 'bold',
+    color: isDarkMode ? '#fff' : '#1a202c',
+    flex: 1
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  reminderDetails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: wp(3),
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reminderSubText: {
+    fontSize: fontSize(14),
+    color: isDarkMode ? '#a0aec0' : '#718096',
+  },
+  dosageText: {
+    fontSize: fontSize(14),
+    fontWeight: '600',
+    color: '#3b82f6',
+    backgroundColor: isDarkMode ? '#1a365d' : '#ebf8ff',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  notesContainer: {
+    marginTop: hp(1),
+    paddingTop: hp(1),
+    borderTopWidth: 1,
+    borderTopColor: isDarkMode ? '#333' : '#edf2f7',
+  },
+  notesText: {
+    fontSize: fontSize(14),
     fontStyle: 'italic',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
+    color: isDarkMode ? '#cbd5e0' : '#4a5568',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: isDarkMode ? '#121212' : '#fff'
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: fontSize(16),
+    color: isDarkMode ? '#fff' : '#333'
   },
 });

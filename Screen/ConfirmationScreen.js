@@ -8,18 +8,13 @@ import {
   Image,
   Alert,
   StatusBar,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import {
-  faArrowLeft,
-  faBell,
-  faShoppingCart,
-  faCreditCard,
-  faCheckCircle,
-} from "@fortawesome/free-solid-svg-icons";
+import { ArrowLeft, Bell, ShoppingCart, CreditCard, CheckCircle } from 'lucide-react-native';
 import LottieView from "lottie-react-native";
+import { wp, hp, fontSize } from "./responsive";
 
 const ConfirmationScreen = () => {
   const navigation = useNavigation();
@@ -111,13 +106,13 @@ const ConfirmationScreen = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
 
       {/* Header (Unchanged) */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: wp(5) }]}>
         <TouchableOpacity onPress={handleBackPress} style={styles.iconButton}>
-          <FontAwesomeIcon icon={faArrowLeft} size={24} color="#007bff" />
+          <ArrowLeft size={24} color="#007bff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Confirmation</Text>
         <TouchableOpacity style={styles.iconButton}>
-          <FontAwesomeIcon icon={faBell} size={24} color="#007bff" />
+          <Bell size={24} color="#007bff" />
         </TouchableOpacity>
       </View>
 
@@ -125,7 +120,7 @@ const ConfirmationScreen = () => {
       <View style={styles.progressContainer}>
         <View style={styles.progressStep}>
           <View style={[styles.progressCircle, styles.activeStep]}>
-            <FontAwesomeIcon icon={faShoppingCart} size={20} color="#fff" />
+            <ShoppingCart size={20} color="#fff" />
           </View>
           <Text style={styles.progressTextActive}>Cart</Text>
         </View>
@@ -134,7 +129,7 @@ const ConfirmationScreen = () => {
         </View>
         <View style={styles.progressStep}>
           <View style={[styles.progressCircle, styles.activeStep]}>
-            <FontAwesomeIcon icon={faCreditCard} size={20} color="#fff" />
+            <CreditCard size={20} color="#fff" />
           </View>
           <Text style={styles.progressTextActive}>Checkout</Text>
         </View>
@@ -143,7 +138,7 @@ const ConfirmationScreen = () => {
         </View>
         <View style={styles.progressStep}>
           <View style={[styles.progressCircle, styles.activeStep]}>
-            <FontAwesomeIcon icon={faCheckCircle} size={20} color="#fff" />
+            <CheckCircle size={20} color="#fff" />
           </View>
           <Text style={styles.progressTextActive}>Confirmation</Text>
         </View>
@@ -213,7 +208,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: fontSize(20),
     fontWeight: "600",
     color: "#1F2937",
     letterSpacing: 0.5,
@@ -223,22 +218,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 15,
+    paddingVertical: hp(2),
     backgroundColor: "#fff",
-    paddingHorizontal: 20,
+    paddingHorizontal: wp(5),
   },
   progressStep: { alignItems: "center", flex: 1 },
   progressCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: wp(9),
+    height: wp(9),
+    borderRadius: wp(4.5),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 5,
     backgroundColor: "#C4C4C4",
   },
   activeStep: { backgroundColor: "#007bff" },
-  progressTextActive: { fontSize: 12, fontWeight: "500", color: "#007bff" },
+  progressTextActive: { fontSize: fontSize(12), fontWeight: "500", color: "#007bff" },
   progressLineContainer: {
     width: 40,
     height: 2,
@@ -249,13 +244,13 @@ const styles = StyleSheet.create({
   animatedProgressLineFull: { height: 2, backgroundColor: "#007bff", width: "100%" },
   confirmationContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(2),
   },
   scrollContent: {
     flexGrow: 1,
     alignItems: "center",
-    paddingBottom: 30,
+    paddingBottom: hp(5),
   },
   card: {
     width: "100%",
@@ -279,14 +274,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   confirmationTitle: {
-    fontSize: 24,
+    fontSize: fontSize(24),
     fontWeight: "700",
     color: "#007bff",
     textAlign: "center",
     marginBottom: 10,
   },
   confirmationMessage: {
-    fontSize: 16,
+    fontSize: fontSize(16),
     color: "#4B5563",
     textAlign: "center",
     lineHeight: 24,

@@ -18,7 +18,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from './ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
+import { wp, hp, fontSize } from './responsive';
+import { ArrowLeft, X, ShoppingBag, Clock, CheckCircle, AlertCircle, Trash } from 'lucide-react-native';
 import moment from 'moment';
 
 const OrderHistoryScreen = ({ navigation }) => {
@@ -143,6 +144,21 @@ const OrderHistoryScreen = ({ navigation }) => {
                 <Text style={styles.orderDate}>
                   {formatDate(item.date)}
                 </Text>
+                {item.paymentMethod === 'EasyPaisa' && item.status === 'pending' && (
+                  <TouchableOpacity
+                    style={styles.completePaymentButton}
+                    onPress={() => navigation.navigate('JazzCashPayment', {
+                      orderData: {
+                        orderTotal: item.orderTotal,
+                        cartItems: item.cartItems,
+                        shippingFee: item.shippingFee,
+                        orderId: item._id
+                      }
+                    })}
+                  >
+                    <Text style={styles.completePaymentText}>Complete Payment</Text>
+                  </TouchableOpacity>
+                )}
                 <Text style={styles.orderTotal}>
                   Rs. {item.orderTotal?.toFixed(2) || '0.00'}
                 </Text>
@@ -160,7 +176,7 @@ const OrderHistoryScreen = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back-outline" size={24} color={isDarkMode ? '#fff' : '#000'} />
+            <ArrowLeft size={24} color={isDarkMode ? '#fff' : '#000'} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Order History</Text>
         </View>
@@ -198,7 +214,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                   style={styles.closeButton}
                   onPress={() => setModalVisible(false)}
                 >
-                  <Ionicons name="close" size={24} color="#fff" />
+                  <X size={24} color="#fff" />
                 </TouchableOpacity>
 
                 <ScrollView contentContainerStyle={styles.modalScroll}>
@@ -262,13 +278,13 @@ const getStyles = (isDarkMode, width = 375, height = 667) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: hp(2),
   },
   backButton: {
     paddingRight: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: fontSize(22),
     fontWeight: 'bold',
     color: isDarkMode ? '#fff' : '#000',
     textAlign: 'center',
@@ -301,9 +317,9 @@ const getStyles = (isDarkMode, width = 375, height = 667) => StyleSheet.create({
     alignItems: 'center',
   },
   orderImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: wp(18),
+    height: wp(18),
+    borderRadius: wp(2),
     marginRight: 10,
   },
   orderDetails: {
@@ -455,6 +471,19 @@ const getStyles = (isDarkMode, width = 375, height = 667) => StyleSheet.create({
     color: isDarkMode ? '#fff' : '#000',
     fontSize: 18,
     fontWeight: '700',
+  },
+  completePaymentButton: {
+    backgroundColor: '#28a745',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 5,
+  },
+  completePaymentText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

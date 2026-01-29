@@ -6,6 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
+import { View, ActivityIndicator } from 'react-native';
 
 // Import your screens
 import LoginScreen from './Screen/LoginScreen';
@@ -90,7 +91,11 @@ export default function App() {
   }, []);
 
   if (initialRoute === null) {
-    return null; // Optionally, replace with a loading spinner
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#004e92' }}>
+        <ActivityIndicator size="large" color="#ffffff" />
+      </View>
+    );
   }
 
   return (
