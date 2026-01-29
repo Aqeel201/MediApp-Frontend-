@@ -17,11 +17,15 @@ import NetInfo from '@react-native-community/netinfo';
 import { wp, hp, fontSize } from './responsive';
 import { StatusBar } from 'react-native';
 
-const MedicineDescription = ({ route, navigation }) => {
+const MedicineDescription = ({ route }) => { // Removed navigation from props as it's now from useNavigation
   const { medicine } = route.params;
   const { isDarkMode } = useTheme();
+  const navigation = useNavigation(); // Initialized navigation using useNavigation hook
   const insets = useSafeAreaInsets();
+  const screenWidth = useWindowDimensions().width; // Initialized screenWidth using useWindowDimensions hook
   const { addToCart, cartItems } = useContext(CartContext);
+
+  const styles = React.useMemo(() => getStyles(isDarkMode, screenWidth, insets), [isDarkMode, screenWidth, insets]);
   const cartCount = cartItems ? cartItems.length : 0;
 
   const [description, setDescription] = useState('');
@@ -97,7 +101,7 @@ const MedicineDescription = ({ route, navigation }) => {
       ]}
     >
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
-      <View style={[styles.headerContainer, { marginTop: insets.top + hp(1) }]}>
+      <View style={[styles.headerContainer, { marginTop: insets.top + hp(0.5) }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={handleBackPress}
@@ -234,142 +238,137 @@ const MedicineDescription = ({ route, navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    padding: wp(5),
-    flexGrow: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: isDarkMode ? '#121212' : '#f0f4ff',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: fontSize(18),
-    fontWeight: '500',
-    color: isDarkMode ? '#fff' : '#1c1c1c',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    position: 'relative',
-  },
-  backButton: {
-    padding: 5,
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    zIndex: 1,
-  },
-  pageTitle: {
-    fontSize: fontSize(22),
-    fontWeight: 'bold',
-    textAlign: 'center',
-    flex: 1,
-  },
-  cartButton: {
-    padding: 5,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    zIndex: 1,
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: 'red',
-    borderRadius: 8,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cartBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  image: {
-    width: '100%',
-    height: hp(30),
-    borderRadius: wp(4),
-    marginBottom: hp(2),
-    resizeMode: 'contain',
-    backgroundColor: '#fff',
-  },
-  noImagePlaceholder: {
-    width: '100%',
-    height: 250,
-    borderRadius: 15,
-    marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: fontSize(24),
-    fontWeight: 'bold',
-    marginBottom: 5,
-    textAlign: 'center',
-  },
-  price: {
-    fontSize: fontSize(20),
-    fontWeight: '600',
-  },
-  section: {
-    width: '100%',
-    marginBottom: 20,
-    padding: 15,
-    borderRadius: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: fontSize(18),
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  infoText: {
-    fontSize: fontSize(14),
-    lineHeight: 24,
-    textAlign: 'justify',
-  },
-  buyNowButton: {
-    backgroundColor: '#007bff',
-    borderRadius: 25,
-    paddingVertical: 15,
-    paddingHorizontal: 35,
-    alignSelf: 'center',
-    marginBottom: 30,
-    elevation: 3,
-    shadowColor: '#007bff',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-  },
-  disabledButton: {
-    backgroundColor: 'gray',
-  },
-  buyNowText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: fontSize(16),
-  },
-});
+const getStyles = (isDarkMode, screenWidth, insets) =>
+  StyleSheet.create({
+    container: {
+      padding: wp(5),
+      flexGrow: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: isDarkMode ? '#121212' : '#f0f4ff',
+    },
+    loadingText: {
+      marginTop: 10,
+      fontSize: fontSize(18),
+      fontWeight: '500',
+      color: isDarkMode ? '#fff' : '#1c1c1c',
+    },
+    headerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: hp(1),
+      position: 'relative',
+      paddingHorizontal: wp(5),
+    },
+    backButton: {
+      padding: wp(2),
+    },
+    pageTitle: {
+      fontSize: fontSize(20),
+      fontWeight: 'bold',
+      textAlign: 'center',
+      flex: 1,
+    },
+    cartButton: {
+      padding: wp(2),
+    },
+    cartBadge: {
+      position: 'absolute',
+      top: -hp(0.5),
+      right: -wp(0.5),
+      backgroundColor: '#ef4444',
+      borderRadius: wp(2),
+      paddingHorizontal: wp(1),
+      paddingVertical: hp(0.2),
+      justifyContent: 'center',
+      alignItems: 'center',
+      minWidth: wp(4),
+    },
+    cartBadgeText: {
+      color: '#fff',
+      fontSize: fontSize(10),
+      fontWeight: 'bold',
+    },
+    image: {
+      width: '100%',
+      height: hp(30),
+      borderRadius: wp(5),
+      marginBottom: hp(2),
+      resizeMode: 'contain',
+      backgroundColor: '#fff',
+    },
+    noImagePlaceholder: {
+      width: '100%',
+      height: hp(30),
+      borderRadius: wp(5),
+      marginBottom: hp(2),
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    header: {
+      marginBottom: hp(2),
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: fontSize(24),
+      fontWeight: 'bold',
+      marginBottom: hp(0.5),
+      textAlign: 'center',
+    },
+    price: {
+      fontSize: fontSize(20),
+      fontWeight: '600',
+    },
+    section: {
+      width: '100%',
+      marginBottom: hp(2),
+      padding: wp(4),
+      borderRadius: wp(3),
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    sectionTitle: {
+      fontSize: fontSize(18),
+      fontWeight: 'bold',
+      marginBottom: hp(1),
+    },
+    infoText: {
+      fontSize: fontSize(14),
+      lineHeight: fontSize(22),
+      textAlign: 'justify',
+    },
+    buyNowButton: {
+      backgroundColor: '#007bff',
+      borderRadius: wp(8),
+      paddingVertical: hp(1.8),
+      paddingHorizontal: wp(10),
+      alignSelf: 'center',
+      marginBottom: hp(4),
+      elevation: 3,
+      shadowColor: '#007bff',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.3,
+      shadowRadius: 5,
+    },
+    disabledButton: {
+      backgroundColor: 'gray',
+    },
+    buyNowText: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: fontSize(16),
+    },
+  });
 
 export default MedicineDescription;

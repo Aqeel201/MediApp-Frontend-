@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { wp, hp, fontSize } from "./responsive";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import * as Location from 'expo-location';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   faHome,
   faSearch,
@@ -295,15 +296,27 @@ const HomeScreen = () => {
         />
         {pendingOrderCount > 0 && (
           <TouchableOpacity
-            style={styles.pendingNotification}
+            style={styles.notificationTouchable}
             onPress={() => navigation.navigate('OrderHistory')}
           >
-            <FontAwesomeIcon icon={faBell} color="#fff" size={16} />
-            <Text style={styles.pendingText}> You have {pendingOrderCount} pending payment(s). Click to complete.</Text>
+            <LinearGradient
+              colors={['#FF9800', '#F57C00']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.pendingNotification}
+            >
+              <View style={styles.notificationIcon}>
+                <FontAwesomeIcon icon={faBell} color="#fff" size={18} />
+              </View>
+              <Text style={styles.pendingText}>
+                You have {pendingOrderCount} pending payment{pendingOrderCount > 1 ? 's' : ''}. {'\n'}
+                <Text style={styles.pendingSubText}>Tap to complete your order</Text>
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
         <ScrollView
-          contentContainerStyle={[styles.scrollContainer, { paddingTop: insets.top }]}
+          contentContainerStyle={[styles.scrollContainer, { paddingTop: insets.top + hp(1) }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -780,6 +793,42 @@ const getStyles = (isDarkMode, screenWidth, insets = { top: 0, bottom: 0 }) =>
       color: "#fff",
       fontSize: fontSize(16),
       fontWeight: "bold",
+    },
+    notificationTouchable: {
+      marginTop: insets.top + hp(1),
+      marginHorizontal: wp(5),
+      borderRadius: 15,
+      elevation: 5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+    },
+    pendingNotification: {
+      flexDirection: 'row',
+      padding: 15,
+      alignItems: 'center',
+      borderRadius: 15,
+    },
+    notificationIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    pendingText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: fontSize(14),
+      flex: 1,
+    },
+    pendingSubText: {
+      fontSize: fontSize(12),
+      fontWeight: "400",
+      opacity: 0.9,
     },
   });
 

@@ -224,7 +224,7 @@ const MedicineScreen = () => {
         translucent={true}
       />
       {/* Fixed Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + hp(1) }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <ArrowLeft size={28} color={isDarkMode ? '#fff' : '#3b82f6'} />
         </TouchableOpacity>
@@ -353,49 +353,50 @@ const getStyles = (isDarkMode, insets = { top: 0, bottom: 0, left: 0, right: 0 }
       backgroundColor: isDarkMode ? '#121212' : '#f8fafc',
     },
     errorText: {
-      fontSize: 16,
+      fontSize: fontSize(16),
       color: isDarkMode ? '#fff' : '#64748b',
       textAlign: 'center',
-      marginVertical: 16,
+      marginVertical: hp(2),
     },
     retryButton: {
       backgroundColor: '#3b82f6',
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 12,
-      marginTop: 8,
+      paddingVertical: hp(1.5),
+      paddingHorizontal: wp(6),
+      borderRadius: wp(3),
+      marginTop: hp(1),
     },
-    retryButtonText: { color: '#fff', fontSize: 14 },
+    retryButtonText: { color: '#fff', fontSize: fontSize(14) },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: wp(6),
-      paddingBottom: hp(2),
+      paddingBottom: hp(1.5),
       borderBottomWidth: 1,
       borderBottomColor: isDarkMode ? '#2d2d2d' : '#e2e8f0',
       backgroundColor: isDarkMode ? '#1c1c1c' : '#fff',
     },
-    backButton: { marginRight: 8 },
-    headerTitle: { fontSize: fontSize(24), fontWeight: '700', color: isDarkMode ? '#fff' : '#1e293b' },
+    backButton: { marginRight: wp(2) },
+    headerTitle: { fontSize: fontSize(22), fontWeight: '700', color: isDarkMode ? '#fff' : '#1e293b' },
     cartButton: {
-      marginLeft: 8,
+      marginLeft: wp(2),
       position: 'relative',
     },
     cartBadge: {
       position: 'absolute',
-      top: -4,
-      right: -4,
-      backgroundColor: 'red',
-      borderRadius: 8,
-      paddingHorizontal: 4,
-      paddingVertical: 2,
+      top: -hp(0.5),
+      right: -wp(1),
+      backgroundColor: '#ef4444',
+      borderRadius: wp(2),
+      paddingHorizontal: wp(1),
+      paddingVertical: hp(0.2),
       justifyContent: 'center',
       alignItems: 'center',
+      minWidth: wp(4),
     },
     cartBadgeText: {
       color: '#fff',
-      fontSize: 10,
+      fontSize: fontSize(10),
       fontWeight: 'bold',
     },
     searchContainer: {
@@ -447,9 +448,9 @@ const getStyles = (isDarkMode, insets = { top: 0, bottom: 0, left: 0, right: 0 }
       paddingHorizontal: wp(6),
     },
     medicineCard: {
-      borderRadius: 20,
-      marginBottom: 16,
-      padding: 16,
+      borderRadius: wp(5),
+      marginBottom: hp(2),
+      padding: wp(4),
       backgroundColor: isDarkMode ? '#1e1e1e' : '#fff',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.05,
