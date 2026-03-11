@@ -145,7 +145,7 @@ const MediAppAIInner = () => {
     if (!authToken) return;
     setLoadingHistory(true);
     try {
-      const res = await axios.get(`${AI_CHATS_ENDPOINT}?userId=${encodeURIComponent(userId || '')}`, {
+      const res = await axios.get(`${AI_CHATS_ENDPOINT}?userId=${encodeURIComponent(userId || '')}&limit=50`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       setSessions(Array.isArray(res.data) ? res.data : []);
@@ -173,7 +173,7 @@ const MediAppAIInner = () => {
   const loadChat = async (sessionId) => {
     if (!authToken) return;
     try {
-      const res = await axios.get(`${AI_CHATS_ENDPOINT}/${sessionId}`, {
+      const res = await axios.get(`${AI_CHATS_ENDPOINT}/${sessionId}?limit=200`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const session = res.data;
