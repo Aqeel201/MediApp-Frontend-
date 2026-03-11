@@ -63,6 +63,7 @@ const LocationScreen = () => {
   const [modal, setModal] = useState({ visible: false, title: '', message: '', type: 'info' });
   const [isDetecting, setIsDetecting] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState(null);
+  const [mapInteracting, setMapInteracting] = useState(false);
   const mapRef = useRef(null);
   const [mapKey, setMapKey] = useState(0);
 
@@ -452,7 +453,7 @@ const LocationScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} scrollEnabled={!mapInteracting}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Information</Text>
           <TextInput
@@ -490,6 +491,12 @@ const LocationScreen = () => {
               key={mapKey}
               ref={mapRef}
               source={{ html: leafletHtml }}
+              javaScriptEnabled
+              domStorageEnabled
+              originWhitelist={['*']}
+              onTouchStart={() => setMapInteracting(true)}
+              onTouchEnd={() => setMapInteracting(false)}
+              onTouchCancel={() => setMapInteracting(false)}
               onMessage={(event) => {
                 try {
                   const data = JSON.parse(event.nativeEvent.data);
