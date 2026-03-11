@@ -34,18 +34,6 @@ const GROQ_DIRECT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
 const GROQ_MODEL = process.env.EXPO_PUBLIC_GROQ_MODEL || 'llama-3.1-8b-instant';
 
-const CHAT_FONT = Platform.select({
-  ios: 'System',
-  android: 'sans-serif',
-  default: 'System',
-});
-
-const CHAT_FONT_BOLD = Platform.select({
-  ios: 'System',
-  android: 'sans-serif-medium',
-  default: 'System',
-});
-
 const WELCOME_MESSAGE =
   "Assalam-o-Alaikum! I'm MediApp AI. I can only answer medical and health-related questions. " +
   "For emergencies, contact a doctor or local emergency services immediately.";
@@ -100,7 +88,6 @@ const MediAppAIInner = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const [clipboardAvailable, setClipboardAvailable] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const [pendingHistoryOpen, setPendingHistoryOpen] = useState(false);
@@ -163,16 +150,6 @@ const MediAppAIInner = () => {
       showSub.remove();
       hideSub.remove();
     };
-  }, []);
-
-  useEffect(() => {
-    try {
-      // eslint-disable-next-line global-require
-      require('expo-clipboard');
-      setClipboardAvailable(true);
-    } catch (err) {
-      setClipboardAvailable(false);
-    }
   }, []);
 
   const fetchChats = async () => {
@@ -463,21 +440,6 @@ const MediAppAIInner = () => {
     setShowActions(true);
   };
 
-  const handleCopy = async () => {
-    if (!actionMessage?.content) return;
-    try {
-      // Lazy-load clipboard to avoid native module crash on older builds
-      // eslint-disable-next-line global-require
-      const Clipboard = require('expo-clipboard');
-      await Clipboard.setStringAsync(actionMessage.content);
-      Alert.alert('Copied', 'Message copied to clipboard.');
-    } catch (err) {
-      Alert.alert('Copy unavailable', 'Please update the app from the store to enable copy.');
-    } finally {
-      setShowActions(false);
-    }
-  };
-
   const handleEdit = () => {
     if (!actionMessage?.content) return;
     setInput(actionMessage.content);
@@ -603,11 +565,6 @@ const MediAppAIInner = () => {
               <View style={styles.actionSheet}>
                 <Text style={styles.actionTitle}>Message options</Text>
                 <View style={styles.actionRow}>
-                  {clipboardAvailable ? (
-                    <TouchableOpacity style={styles.actionBtn} onPress={handleCopy}>
-                      <Text style={styles.actionBtnText}>Copy</Text>
-                    </TouchableOpacity>
-                  ) : null}
                   {actionMessage?.role === 'user' ? (
                     <TouchableOpacity style={styles.actionBtn} onPress={handleEdit}>
                       <Text style={styles.actionBtnText}>Edit</Text>
@@ -694,7 +651,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#fff',
       fontSize: fontSize(20),
       fontWeight: '800',
-      fontFamily: CHAT_FONT_BOLD,
       flex: 1,
       marginLeft: 10,
     },
@@ -715,13 +671,11 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#fff',
       fontSize: fontSize(12),
       fontWeight: '700',
-      fontFamily: CHAT_FONT_BOLD,
     },
     headerSubtitle: {
       color: 'rgba(255,255,255,0.9)',
       marginTop: 8,
       fontSize: fontSize(12),
-      fontFamily: CHAT_FONT,
     },
     headerBadge: {
       marginTop: 12,
@@ -738,7 +692,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#0ea5e9',
       fontWeight: '700',
       fontSize: fontSize(12),
-      fontFamily: CHAT_FONT_BOLD,
     },
     body: {
       flex: 1,
@@ -778,13 +731,11 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
     bubbleText: {
       fontSize: fontSize(15),
       lineHeight: 22,
-      fontFamily: CHAT_FONT,
       letterSpacing: 0.2,
     },
     userText: {
       color: '#fff',
       fontWeight: '600',
-      fontFamily: CHAT_FONT_BOLD,
     },
     assistantText: {
       color: isDarkMode ? '#e5e7eb' : '#111827',
@@ -793,7 +744,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#2563eb',
       fontWeight: '700',
       textDecorationLine: 'underline',
-      fontFamily: CHAT_FONT_BOLD,
     },
     suggestionRow: {
       flexDirection: 'row',
@@ -811,7 +761,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#fff',
       fontSize: fontSize(12),
       fontWeight: '700',
-      fontFamily: CHAT_FONT_BOLD,
     },
     inputRow: {
       flexDirection: 'row',
@@ -832,7 +781,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       maxHeight: hp(16),
       borderWidth: 1,
       borderColor: isDarkMode ? '#1f2937' : '#e5e7eb',
-      fontFamily: CHAT_FONT,
     },
     sendBtn: {
       backgroundColor: '#0ea5e9',
@@ -862,7 +810,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       fontSize: fontSize(16),
       fontWeight: '800',
       color: isDarkMode ? '#fff' : '#111827',
-      fontFamily: CHAT_FONT_BOLD,
       marginBottom: hp(1.5),
     },
     actionRow: {
@@ -879,7 +826,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
     actionBtnText: {
       color: '#fff',
       fontWeight: '700',
-      fontFamily: CHAT_FONT_BOLD,
     },
     actionCancelBtn: {
       marginTop: hp(1.5),
@@ -890,7 +836,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
     actionCancelText: {
       color: isDarkMode ? '#cbd5f5' : '#475569',
       fontWeight: '700',
-      fontFamily: CHAT_FONT_BOLD,
     },
     historyOverlay: {
       flex: 1,
@@ -908,7 +853,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       fontSize: fontSize(18),
       fontWeight: '800',
       color: isDarkMode ? '#fff' : '#111827',
-      fontFamily: CHAT_FONT_BOLD,
       marginBottom: hp(1.5),
     },
     historyHeaderRow: {
@@ -929,7 +873,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#fff',
       fontSize: fontSize(12),
       fontWeight: '700',
-      fontFamily: CHAT_FONT_BOLD,
     },
     historyItemRow: {
       flexDirection: 'row',
@@ -953,25 +896,21 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       fontSize: fontSize(14),
       fontWeight: '700',
       color: isDarkMode ? '#fff' : '#111827',
-      fontFamily: CHAT_FONT_BOLD,
     },
     historyItemSub: {
       fontSize: fontSize(12),
       color: isDarkMode ? '#cbd5f5' : '#6b7280',
       marginTop: 4,
-      fontFamily: CHAT_FONT,
     },
     historyItemDate: {
       fontSize: fontSize(11),
       color: isDarkMode ? '#94a3b8' : '#9ca3af',
       marginTop: 4,
-      fontFamily: CHAT_FONT,
     },
     historyEmpty: {
       textAlign: 'center',
       color: isDarkMode ? '#cbd5f5' : '#6b7280',
       marginVertical: hp(2),
-      fontFamily: CHAT_FONT,
     },
     historyCloseBtn: {
       marginTop: hp(2),
@@ -984,7 +923,6 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
     historyCloseText: {
       color: '#fff',
       fontWeight: '700',
-      fontFamily: CHAT_FONT_BOLD,
     },
   });
 
