@@ -29,7 +29,7 @@ const NotificationPage = () => {
 
   const styles = getStyles(isDarkMode, insets);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (markRead = true) => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('authToken');
@@ -44,11 +44,13 @@ const NotificationPage = () => {
       });
       const data = Array.isArray(resp.data) ? resp.data : [];
       setItems(data);
-      await axios.put(
-        `${API_BASE}/api/notifications/read`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` }, timeout: 15000 }
-      );
+      if (markRead) {
+        await axios.put(
+          `${API_BASE}/api/notifications/read`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` }, timeout: 15000 }
+        );
+      }
     } catch (err) {
       console.error('Failed to load notifications', err?.message || err);
     } finally {
@@ -57,7 +59,7 @@ const NotificationPage = () => {
   };
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(false);
   }, []);
 
   return (

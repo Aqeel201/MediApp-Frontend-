@@ -152,8 +152,8 @@ const HomeScreen = () => {
       const newest = list[0]?.date ? new Date(list[0].date).getTime() : 0;
       if (!lastSeenRaw) {
         if (newest) await AsyncStorage.setItem('lastNotifiedAt', new Date(newest).toISOString());
-        return;
       }
+      // Do not return early; still notify for fresh items if any
       const lastSeen = new Date(lastSeenRaw).getTime();
       if (!Number.isFinite(lastSeen)) return;
 

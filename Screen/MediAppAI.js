@@ -48,7 +48,7 @@ const WELCOME_MESSAGE =
   "Assalam-o-Alaikum! I'm MediApp AI. I can only answer medical and health-related questions. " +
   "For emergencies, contact a doctor or local emergency services immediately.";
 
-const SAFE_MODE = false;
+const SAFE_MODE = true;
 
 class ScreenErrorBoundary extends React.Component {
   constructor(props) {
@@ -462,46 +462,11 @@ const MediAppAIInner = () => {
           <Text style={styles.headerSubtitle}>Medical-only assistant.</Text>
         </View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom : 0}
-          style={styles.body}
-        >
-          <FlatList
-            ref={listRef}
-            data={messages}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.list}
-            keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-            renderItem={({ item }) => (
-              <View style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.assistantBubble]}>
-                <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : styles.assistantText]}>
-                  {item.content}
-                </Text>
-              </View>
-            )}
-          />
-
-          <View style={styles.inputRow}>
-            <TextInput
-              ref={inputRef}
-              value={input}
-              onChangeText={setInput}
-              placeholder="Ask a medical question..."
-              placeholderTextColor={isDarkMode ? '#9ca3af' : '#6b7280'}
-              style={styles.input}
-              multiline
-            />
-            <TouchableOpacity onPress={sendMessage} style={styles.sendBtn} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <FontAwesomeIcon icon={faPaperPlane} size={16} color="#fff" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+        <View style={styles.safeBody}>
+          <Text style={styles.safeText}>
+            AI is temporarily unavailable. Please update the app or try again in a moment.
+          </Text>
+        </View>
       </View>
     );
   }
@@ -717,6 +682,18 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
     },
     body: {
       flex: 1,
+    },
+    safeBody: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: wp(8),
+    },
+    safeText: {
+      textAlign: 'center',
+      fontSize: fontSize(14),
+      color: isDarkMode ? '#e5e7eb' : '#334155',
+      lineHeight: 22,
     },
     list: {
       padding: wp(5),
