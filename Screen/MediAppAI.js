@@ -48,6 +48,8 @@ const WELCOME_MESSAGE =
   "Assalam-o-Alaikum! I'm MediApp AI. I can only answer medical and health-related questions. " +
   "For emergencies, contact a doctor or local emergency services immediately.";
 
+const SAFE_MODE = true;
+
 class ScreenErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -440,6 +442,61 @@ const MediAppAIInner = () => {
     () => getStyles(isDarkMode, width, height, insets, keyboardVisible),
     [isDarkMode, width, height, insets, keyboardVisible]
   );
+
+  if (SAFE_MODE) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { backgroundColor: '#1d4ed8' }]}>
+          <View style={styles.headerRow}>
+            <FontAwesomeIcon icon={faStethoscope} size={22} color="#fff" />
+            <Text style={styles.headerTitle}>MediApp AI</Text>
+          </View>
+          <Text style={styles.headerSubtitle}>Medical-only assistant.</Text>
+        </View>
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom : 0}
+          style={styles.body}
+        >
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+            renderItem={({ item }) => (
+              <View style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.assistantBubble]}>
+                <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : styles.assistantText]}>
+                  {item.content}
+                </Text>
+              </View>
+            )}
+          />
+
+          <View style={styles.inputRow}>
+            <TextInput
+              ref={inputRef}
+              value={input}
+              onChangeText={setInput}
+              placeholder="Ask a medical question..."
+              placeholderTextColor={isDarkMode ? '#9ca3af' : '#6b7280'}
+              style={styles.input}
+              multiline
+            />
+            <TouchableOpacity onPress={sendMessage} style={styles.sendBtn} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <FontAwesomeIcon icon={faPaperPlane} size={16} color="#fff" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    );
+  }
 
   return (
       <View style={styles.container}>
