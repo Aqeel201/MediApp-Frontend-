@@ -13,6 +13,8 @@ import {
   useWindowDimensions,
   Modal,
   Keyboard,
+  InteractionManager,
+  UIManager,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
@@ -48,7 +50,7 @@ const WELCOME_MESSAGE =
   "Assalam-o-Alaikum! I'm MediApp AI. I can only answer medical and health-related questions. " +
   "For emergencies, contact a doctor or local emergency services immediately.";
 
-const SAFE_MODE = true;
+const SAFE_MODE = false;
 
 class ScreenErrorBoundary extends React.Component {
   constructor(props) {
@@ -100,6 +102,8 @@ const MediAppAIInner = () => {
   const [showActions, setShowActions] = useState(false);
   const [clipboardAvailable, setClipboardAvailable] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
+  const [isReady, setIsReady] = useState(false);
+  const [pendingHistoryOpen, setPendingHistoryOpen] = useState(false);
   const listRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -120,6 +124,36 @@ const MediAppAIInner = () => {
       setUserId(id);
     };
     loadAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!authToken || !userId) return;
+    const t = setTimeout(() => {
+      fetchChats();
+    }, 600);
+    return () => clearTimeout(t);
+  }, [authToken, userId]);
+
+  useEffect(() => {
+    let mounted = true;
+    const init = async () => {
+      if (Platform.OS === 'android' && 'setLayoutAnimationEnabledExperimental' in UIManager) {
+        UIManager.setLayoutAnimationEnabledExperimental(true);
+      }
+      const run = async () => {
+        if (!mounted) return;
+        setIsReady(true);
+      };
+      if (InteractionManager?.runAfterInteractions) {
+        InteractionManager.runAfterInteractions(run);
+      } else {
+        run();
+      }
+    };
+    init();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -156,13 +190,18 @@ const MediAppAIInner = () => {
     }
   };
 
-  useEffect(() => {
-    if (authToken) fetchChats();
-  }, [authToken, userId]);
-
   const openHistory = async () => {
-    setShowHistory(true);
-    await fetchChats();
+    if (!authToken || !userId) {
+      setShowHistory(true);
+      return;
+    }
+    setPendingHistoryOpen(true);
+    try {
+      await fetchChats();
+    } finally {
+      setShowHistory(true);
+      setPendingHistoryOpen(false);
+    }
   };
 
   const startNewChat = () => {
@@ -471,6 +510,23 @@ const MediAppAIInner = () => {
     );
   }
 
+  if (!isReady) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { backgroundColor: '#1d4ed8' }]}>
+          <View style={styles.headerRow}>
+            <FontAwesomeIcon icon={faStethoscope} size={22} color="#fff" />
+            <Text style={styles.headerTitle}>MediApp AI</Text>
+          </View>
+          <Text style={styles.headerSubtitle}>Loading assistant...</Text>
+        </View>
+        <View style={styles.safeBody}>
+          <ActivityIndicator />
+        </View>
+      </View>
+    );
+  }
+
   return (
       <View style={styles.container}>
         <LinearGradient colors={['#0ea5e9', '#1d4ed8']} style={styles.header}>
@@ -541,68 +597,72 @@ const MediAppAIInner = () => {
           </View>
         </KeyboardAvoidingView>
 
-        <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}>
-          <View style={styles.actionOverlay}>
-            <View style={styles.actionSheet}>
-              <Text style={styles.actionTitle}>Message options</Text>
-              <View style={styles.actionRow}>
-                {clipboardAvailable ? (
-                  <TouchableOpacity style={styles.actionBtn} onPress={handleCopy}>
-                    <Text style={styles.actionBtnText}>Copy</Text>
-                  </TouchableOpacity>
-                ) : null}
-                {actionMessage?.role === 'user' ? (
-                  <TouchableOpacity style={styles.actionBtn} onPress={handleEdit}>
-                    <Text style={styles.actionBtnText}>Edit</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-              <TouchableOpacity style={styles.actionCancelBtn} onPress={() => setShowActions(false)}>
-                <Text style={styles.actionCancelText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
-        <Modal visible={showHistory} transparent animationType="slide" onRequestClose={() => setShowHistory(false)}>
-          <View style={styles.historyOverlay}>
-            <View style={styles.historyModal}>
-              <View style={styles.historyHeaderRow}>
-                <Text style={styles.historyTitle}>Recent Chats</Text>
-                <TouchableOpacity onPress={deleteAllChats} style={styles.historyClearBtn}>
-                  <FontAwesomeIcon icon={faTrash} size={14} color="#fff" />
-                  <Text style={styles.historyClearText}>Clear</Text>
+        {showActions ? (
+          <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}>
+            <View style={styles.actionOverlay}>
+              <View style={styles.actionSheet}>
+                <Text style={styles.actionTitle}>Message options</Text>
+                <View style={styles.actionRow}>
+                  {clipboardAvailable ? (
+                    <TouchableOpacity style={styles.actionBtn} onPress={handleCopy}>
+                      <Text style={styles.actionBtnText}>Copy</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                  {actionMessage?.role === 'user' ? (
+                    <TouchableOpacity style={styles.actionBtn} onPress={handleEdit}>
+                      <Text style={styles.actionBtnText}>Edit</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                <TouchableOpacity style={styles.actionCancelBtn} onPress={() => setShowActions(false)}>
+                  <Text style={styles.actionCancelText}>Close</Text>
                 </TouchableOpacity>
               </View>
-              {loadingHistory ? (
-                <ActivityIndicator />
-              ) : (
-                <FlatList
-                  data={sessions}
-                  keyExtractor={(item) => item._id}
-                  renderItem={({ item }) => (
-                    <View style={styles.historyItemRow}>
-                      <TouchableOpacity style={styles.historyItem} onPress={() => loadChat(item._id)}>
-                        <Text style={styles.historyItemTitle}>{item.title || 'Chat'}</Text>
-                        <Text style={styles.historyItemSub} numberOfLines={1}>{item.lastMessage || ''}</Text>
-                        <Text style={styles.historyItemDate}>
-                          {item.updatedAt ? new Date(item.updatedAt).toLocaleString() : ''}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => deleteChat(item._id)} style={styles.historyDeleteBtn}>
-                        <FontAwesomeIcon icon={faTrash} size={14} color="#ef4444" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                  ListEmptyComponent={<Text style={styles.historyEmpty}>No chats yet.</Text>}
-                />
-              )}
-              <TouchableOpacity onPress={() => setShowHistory(false)} style={styles.historyCloseBtn}>
-                <Text style={styles.historyCloseText}>Close</Text>
-              </TouchableOpacity>
             </View>
-          </View>
-        </Modal>
+          </Modal>
+        ) : null}
+
+        {showHistory ? (
+          <Modal visible={showHistory} transparent animationType="slide" onRequestClose={() => setShowHistory(false)}>
+            <View style={styles.historyOverlay}>
+              <View style={styles.historyModal}>
+                <View style={styles.historyHeaderRow}>
+                  <Text style={styles.historyTitle}>Recent Chats</Text>
+                  <TouchableOpacity onPress={deleteAllChats} style={styles.historyClearBtn}>
+                    <FontAwesomeIcon icon={faTrash} size={14} color="#fff" />
+                    <Text style={styles.historyClearText}>Clear</Text>
+                  </TouchableOpacity>
+                </View>
+                {loadingHistory || pendingHistoryOpen ? (
+                  <ActivityIndicator />
+                ) : (
+                  <FlatList
+                    data={sessions}
+                    keyExtractor={(item) => item._id}
+                    renderItem={({ item }) => (
+                      <View style={styles.historyItemRow}>
+                        <TouchableOpacity style={styles.historyItem} onPress={() => loadChat(item._id)}>
+                          <Text style={styles.historyItemTitle}>{item.title || 'Chat'}</Text>
+                          <Text style={styles.historyItemSub} numberOfLines={1}>{item.lastMessage || ''}</Text>
+                          <Text style={styles.historyItemDate}>
+                            {item.updatedAt ? new Date(item.updatedAt).toLocaleString() : ''}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => deleteChat(item._id)} style={styles.historyDeleteBtn}>
+                          <FontAwesomeIcon icon={faTrash} size={14} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    ListEmptyComponent={<Text style={styles.historyEmpty}>No chats yet.</Text>}
+                  />
+                )}
+                <TouchableOpacity onPress={() => setShowHistory(false)} style={styles.historyCloseBtn}>
+                  <Text style={styles.historyCloseText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        ) : null}
       </View>
   );
 };
