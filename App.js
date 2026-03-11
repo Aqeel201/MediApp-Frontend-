@@ -44,6 +44,7 @@ import MedicineDescription from './Screen/MedicineDetails';
 import LocationScreen from './Screen/LocationScreen';
 import ConfirmationScreen from './Screen/ConfirmationScreen';
 import JazzCashPayment from './Screen/JazzCashPayment';
+import StripePaymentScreen from './Screen/StripePaymentScreen';
 import FAQScreen from './Screen/FAQScreen';
 import TransactionHistory from './Screen/TransactionHistory';
 import UserFeedbackScreen from './Screen/UserFeedbackScreen';
@@ -55,17 +56,22 @@ import ReminderScheduleScreen from './Screen/ReminderScheduleScreen';
 import SmartInteractionScreen from './Screen/SmartInteractionScreen';
 import MedicineMatchGame from './Screen/MedicineMatchGame';
 import Chat from './Screen/Chat'; // Import the chat screen
+import MediAppAI from './Screen/MediAppAI';
 
 // Import providers
 import { ThemeProvider } from './Screen/ThemeContext';
 import CartProvider from './Screen/CartContext';
 import { AuthProvider } from './Screen/AuthContext'; // Import AuthProvider
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 const Stack = createStackNavigator();
 
+import PremiumSplash from './Screen/PremiumSplash';
+
 export default function App() {
   const [initialRoute, setInitialRoute] = useState(null);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const checkSessionStatus = async () => {
@@ -73,31 +79,18 @@ export default function App() {
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
         if (hasSeenOnboarding !== 'true') {
           setInitialRoute('Onboarding');
-          return;
-        }
-
-        const token = await AsyncStorage.getItem('authToken');
-        if (token) {
-          setInitialRoute('Home');
         } else {
-          setInitialRoute('Login');
+          const token = await AsyncStorage.getItem('authToken');
+          setInitialRoute(token ? 'Home' : 'Login');
         }
       } catch (error) {
         console.error('Error checking session status:', error);
-        setInitialRoute('Onboarding'); // Fallback to onboarding if error occurs
+        setInitialRoute('Login');
       }
     };
 
     checkSessionStatus();
   }, []);
-
-  if (initialRoute === null) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#004e92' }}>
-        <ActivityIndicator size="large" color="#ffffff" />
-      </View>
-    );
-  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -107,58 +100,66 @@ export default function App() {
             <CartProvider>
               <NavigationContainer>
                 <StatusBar style="auto" />
-                <Stack.Navigator initialRouteName={initialRoute}>
-                  <Stack.Screen
-                    name="Onboarding"
-                    component={OnboardingNavigator}
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Signup" component={SignUpScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Medicine" component={MedicinesScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="PersonalData" component={PersonalDataScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="OnlineMedicinePurchase" component={OnlineMedicinePurchase} options={{ headerShown: false }} />
-                  <Stack.Screen name="NotificationPage" component={NotificationPage} options={{ headerShown: false }} />
-                  <Stack.Screen name="MapLocation" component={MapScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Homeopathy" component={HomeopathyScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Herbal" component={HerbalScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="HealthDevices" component={HealthDevicesScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="DentalCare" component={DentalCareScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="CoronaHelp" component={CoronaHelpScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="MedicalKit" component={MedicalKitScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="SkinCare" component={SkinCareScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Kits" component={KitsScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="KitDetails" component={KitDetails} options={{ headerShown: false }} />
-                  <Stack.Screen name="MedicineRecommendation" component={MedicineRecommendationScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="HelpAndSupport" component={HelpAndSupport} options={{ headerShown: false }} />
-                  <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="TermsAndConditions" component={TermsAndConditionsScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Feedback" component={FeedbackScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="DeviceDetail" component={DeviceDetailScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="DentalCareDetail" component={DentalCareDetailScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="PurchaseConfirmation" component={PurchaseConfirmation} options={{ headerShown: false }} />
-                  <Stack.Screen name="InventoryManagement" component={InventoryManagement} options={{ headerShown: false }} />
-                  <Stack.Screen name="PatientRecords" component={PatientRecords} options={{ headerShown: false }} />
-                  <Stack.Screen name="MedicineDetail" component={MedicineDescription} options={{ headerShown: false }} />
-                  <Stack.Screen name="Location" component={LocationScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Confirmation" component={ConfirmationScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="JazzCashPayment" component={JazzCashPayment} options={{ headerShown: false }} />
-                  <Stack.Screen name="FAQScreen" component={FAQScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="TransactionHistory" component={TransactionHistory} options={{ headerShown: false }} />
-                  <Stack.Screen name="UserFeedback" component={UserFeedbackScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="VerifyOTP" component={VerifyOTPScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Reset" component={ResetScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="MedicineReminder" component={MedicineReminderScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="SmartInteraction" component={SmartInteractionScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="MedicineMatchGame" component={MedicineMatchGame} options={{ headerShown: false }} />
-                  <Stack.Screen name="ReminderSchedule" component={ReminderScheduleScreen} options={{ headerShown: false }} />
-                  <Stack.Screen name="Chat" component={Chat} options={{ headerShown: false }} />
-                </Stack.Navigator>
+                <StripeProvider publishableKey="pk_test_51Pzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz">
+                  {(initialRoute === null || showSplash) ? (
+                    <PremiumSplash onFinish={() => setShowSplash(false)} />
+                  ) : (
+                    <Stack.Navigator initialRouteName={initialRoute}>
+                      <Stack.Screen
+                        name="Onboarding"
+                        component={OnboardingNavigator}
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Signup" component={SignUpScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Medicine" component={MedicinesScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="PersonalData" component={PersonalDataScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="OnlineMedicinePurchase" component={OnlineMedicinePurchase} options={{ headerShown: false }} />
+                      <Stack.Screen name="NotificationPage" component={NotificationPage} options={{ headerShown: false }} />
+                      <Stack.Screen name="MapLocation" component={MapScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Homeopathy" component={HomeopathyScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Herbal" component={HerbalScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="HealthDevices" component={HealthDevicesScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="DentalCare" component={DentalCareScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="CoronaHelp" component={CoronaHelpScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="MedicalKit" component={MedicalKitScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="SkinCare" component={SkinCareScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Kits" component={KitsScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="KitDetails" component={KitDetails} options={{ headerShown: false }} />
+                      <Stack.Screen name="MedicineRecommendation" component={MedicineRecommendationScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="HelpAndSupport" component={HelpAndSupport} options={{ headerShown: false }} />
+                      <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="TermsAndConditions" component={TermsAndConditionsScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Feedback" component={FeedbackScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="DeviceDetail" component={DeviceDetailScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="DentalCareDetail" component={DentalCareDetailScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="PurchaseConfirmation" component={PurchaseConfirmation} options={{ headerShown: false }} />
+                      <Stack.Screen name="InventoryManagement" component={InventoryManagement} options={{ headerShown: false }} />
+                      <Stack.Screen name="PatientRecords" component={PatientRecords} options={{ headerShown: false }} />
+                      <Stack.Screen name="MedicineDetail" component={MedicineDescription} options={{ headerShown: false }} />
+                      <Stack.Screen name="Location" component={LocationScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Confirmation" component={ConfirmationScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="JazzCashPayment" component={JazzCashPayment} options={{ headerShown: false }} />
+                      <Stack.Screen name="StripePaymentScreen" component={StripePaymentScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="FAQScreen" component={FAQScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="TransactionHistory" component={TransactionHistory} options={{ headerShown: false }} />
+                      <Stack.Screen name="UserFeedback" component={UserFeedbackScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="VerifyOTP" component={VerifyOTPScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Reset" component={ResetScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="MedicineReminder" component={MedicineReminderScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="SmartInteraction" component={SmartInteractionScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="MedicineMatchGame" component={MedicineMatchGame} options={{ headerShown: false }} />
+                      <Stack.Screen name="MediAppAI" component={MediAppAI} options={{ headerShown: false }} />
+                      <Stack.Screen name="ReminderSchedule" component={ReminderScheduleScreen} options={{ headerShown: false }} />
+                      <Stack.Screen name="Chat" component={Chat} options={{ headerShown: false }} />
+                    </Stack.Navigator>
+                  )}
+                </StripeProvider>
               </NavigationContainer>
             </CartProvider>
           </ThemeProvider>

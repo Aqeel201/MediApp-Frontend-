@@ -23,8 +23,9 @@ import { useTheme } from './ThemeContext';
 import { Mail, Lock, Eye, EyeOff, Fingerprint } from 'lucide-react-native';
 import axios from 'axios';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { CartContext } from './CartContext';
 import { wp, hp, fontSize } from './responsive';
+import PremiumModal from './PremiumModal';
+import { CartContext } from './CartContext';
 
 
 const LoginScreen = () => {
@@ -38,6 +39,7 @@ const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
   const [isBiometricsEnabled, setIsBiometricsEnabled] = useState(false);
+  const [modal, setModal] = useState({ visible: false, title: '', message: '', type: 'info' });
 
   // Animated value for background image
   const animatedValue = useRef(new Animated.Value(0)).current;
@@ -91,18 +93,36 @@ const LoginScreen = () => {
         }
         await AsyncStorage.setItem('authToken', token);
         await AsyncStorage.setItem('user', JSON.stringify(user));
+
+        // If biometrics are enabled, sync the biometric token
+        const biometricsEnabled = await AsyncStorage.getItem('isBiometricsEnabled');
+        if (biometricsEnabled === 'true') {
+          await AsyncStorage.setItem('biometricToken', token);
+          await AsyncStorage.setItem('biometricUser', JSON.stringify(user));
+        }
+
         refreshUser && refreshUser();
-        Alert.alert('Success', 'Login successful.');
-        navigation.navigate('Home');
+        setModal({
+          visible: true,
+          title: 'Success',
+          message: 'Login successful.',
+          type: 'success',
+          onConfirm: () => navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          })
+        });
       } else {
         Alert.alert('Login Failed', response.data.message);
       }
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert(
-        'Login Failed',
-        error.response?.data?.message || 'An unexpected error occurred.'
-      );
+      setModal({
+        visible: true,
+        title: 'Login Failed',
+        message: error.response?.data?.message || 'Invalid credentials or connection error.',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -111,29 +131,54 @@ const LoginScreen = () => {
   const handleBiometricLogin = async () => {
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Login with Biometrics',
-        fallbackLabel: 'Enter Password',
+        promptMessage: 'Login to MediApp',
+        fallbackLabel: 'Use Password',
       });
 
       if (result.success) {
         setLoading(true);
-        // In a real app, you'd use a securely stored token or credentials.
-        // For this demo, we'll assume we can retrieve the last used user/token if they exist.
-        const storedToken = await AsyncStorage.getItem('authToken');
-        const storedUser = await AsyncStorage.getItem('user');
+        let storedToken = await AsyncStorage.getItem('authToken');
 
-        if (storedToken && storedUser) {
-          refreshUser && refreshUser();
-          Alert.alert('Success', 'Biometric Login successful.');
-          navigation.navigate('Home');
-        } else {
-          Alert.alert('Account Required', 'Please log in manually first to enable biometrics.');
+        // If authToken is missing (e.g. after logout), try biometricToken
+        if (!storedToken) {
+          storedToken = await AsyncStorage.getItem('biometricToken');
+          if (storedToken) {
+            await AsyncStorage.setItem('authToken', storedToken);
+            const bioUser = await AsyncStorage.getItem('biometricUser');
+            if (bioUser) {
+              await AsyncStorage.setItem('user', bioUser);
+            }
+          }
         }
-        setLoading(false);
+
+        if (storedToken) {
+          refreshUser && refreshUser();
+          setModal({
+            visible: true,
+            title: 'Welcome Back!',
+            message: 'Biometric authentication successful.',
+            type: 'success',
+            onConfirm: () => navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            })
+          });
+        } else {
+          setModal({
+            visible: true,
+            title: 'Action Required',
+            message: 'Biometric link not found. Please log in manually once with password to re-enable biometrics.',
+            type: 'info'
+          });
+        }
       }
     } catch (error) {
-      console.error('Biometric authentication error:', error);
-      Alert.alert('Error', 'Biometric authentication failed.');
+      setModal({
+        visible: true,
+        title: 'Error',
+        message: 'Biometric authentication failed. Please use your password.',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -288,6 +333,16 @@ const LoginScreen = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <PremiumModal
+        visible={modal.visible}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={() => {
+          if (modal.onConfirm) modal.onConfirm();
+          setModal({ ...modal, visible: false });
+        }}
+      />
     </View>
   );
 };

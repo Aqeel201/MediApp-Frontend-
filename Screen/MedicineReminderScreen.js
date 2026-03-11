@@ -495,7 +495,7 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: isDarkMode ? '#121212' : '#f8f9fa',
-    paddingTop: insets.top,
+    paddingTop: (insets.top || 50),
   },
   loadingContainer: {
     flex: 1,

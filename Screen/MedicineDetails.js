@@ -99,11 +99,11 @@ const MedicineDescription = ({ route }) => {
     <ScrollView
       contentContainerStyle={[
         styles.container,
-        { backgroundColor: isDarkMode ? '#121212' : '#f0f4ff', paddingBottom: hp(5) + insets.bottom },
+        { backgroundColor: isDarkMode ? '#121212' : '#f0f4ff', paddingBottom: hp(12) + insets.bottom },
       ]}
     >
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
-      <View style={[styles.headerContainer, { marginTop: insets.top + hp(0.5) }]}>
+      <View style={[styles.headerContainer, { marginTop: (insets.top || 50) + hp(0.5) }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={handleBackPress}

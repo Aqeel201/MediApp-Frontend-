@@ -209,7 +209,7 @@ const PersonalDataScreen = () => {
       />
       <ScrollView
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={{ paddingTop: insets.top + 10 }}
+        contentContainerStyle={{ paddingTop: (insets.top || 50) + 10, paddingBottom: insets.bottom + 80 }}
       >
         <View style={styles.header}>
           <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>

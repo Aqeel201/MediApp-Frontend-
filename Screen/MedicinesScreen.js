@@ -224,7 +224,7 @@ const MedicineScreen = () => {
         translucent={true}
       />
       {/* Fixed Header */}
-      <View style={[styles.header, { paddingTop: insets.top + hp(1) }]}>
+      <View style={[styles.header, { paddingTop: (insets.top || 50) + hp(1) }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <ArrowLeft size={28} color={isDarkMode ? '#fff' : '#3b82f6'} />
         </TouchableOpacity>
@@ -443,7 +443,7 @@ const getStyles = (isDarkMode, insets = { top: 0, bottom: 0, left: 0, right: 0 }
     categoryTabTextActive: { color: '#fff', fontWeight: '600' },
     dynamicTabs: { paddingVertical: 4 },
     medicineList: {
-      paddingBottom: hp(15) + insets.bottom,
+      paddingBottom: hp(18) + insets.bottom,
       paddingTop: hp(2),
       paddingHorizontal: wp(6),
     },

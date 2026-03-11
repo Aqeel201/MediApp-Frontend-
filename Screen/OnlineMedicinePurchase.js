@@ -99,7 +99,7 @@ const ProductCartScreen = () => {
       />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + wp(5) }]}>
+      <View style={[styles.header, { paddingTop: (insets.top || 30) + wp(5) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <ArrowLeft size={24} color={isDarkMode ? "#fff" : "#007bff"} />
         </TouchableOpacity>
@@ -156,6 +156,12 @@ const ProductCartScreen = () => {
           <View style={styles.emptyContainer}>
             <ShoppingCart size={wp(20)} color={isDarkMode ? "#333" : "#e0e0e0"} />
             <Text style={styles.emptyText}>Your cart is empty</Text>
+            <TouchableOpacity
+              style={styles.browseButton}
+              onPress={() => navigation.navigate("Medicine")}
+            >
+              <Text style={styles.browseButtonText}>Browse Medicines</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <>
@@ -339,7 +345,7 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
   },
   scrollContainer: {
     padding: wp(4.5),
-    paddingBottom: hp(12) + insets.bottom,
+    paddingBottom: hp(18) + insets.bottom,
   },
   emptyContainer: {
     flex: 1,
@@ -352,6 +358,18 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     color: isDarkMode ? "#aaa" : "#6B7280",
     marginTop: 20,
     fontWeight: "500",
+  },
+  browseButton: {
+    marginTop: 16,
+    backgroundColor: "#2563eb",
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 14,
+  },
+  browseButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
   },
   card: {
     backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",

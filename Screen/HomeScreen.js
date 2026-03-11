@@ -49,10 +49,16 @@ import {
   faCreditCard,
   faStar,
   faComments,
+  faTimes,
+  faGift,
+  faRocket,
+  faShieldAlt,
+  faStethoscope,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { useTheme } from "./ThemeContext";
 import Footer from "./Footer";
+import * as Updates from 'expo-updates';
 
 const HomeScreen = () => {
   const { width: screenWidth } = useWindowDimensions();
@@ -75,6 +81,90 @@ const HomeScreen = () => {
   const pan = useRef(new Animated.Value(0)).current;
   const translateX = Animated.add(slideAnim, pan);
   const [showClinicModal, setShowClinicModal] = useState(false);
+  const [showPromo, setShowPromo] = useState(false);
+  const [currentPromo, setCurrentPromo] = useState(null);
+  const promoScaleAnim = useRef(new Animated.Value(0)).current;
+
+  const PROMO_DATA = [
+    {
+      id: 1,
+      title: "BIG UPDATES!",
+      subtitle: "Something Amazing is Coming",
+      text: "We're building new features to simplify your healthcare journey.",
+      icon: faStar,
+      colors: ['#007bff', '#00c6ff', '#007bff'],
+      badges: [
+        { name: "AI Doctor", icon: faUserMd },
+        { name: "Live Tracker", icon: faHeartbeat }
+      ],
+      btnText: "WOW, CAN'T WAIT!"
+    },
+    {
+      id: 2,
+      title: "FREE DELIVERY!",
+      subtitle: "For your first 3 orders",
+      text: "Get your medicines delivered at zero shipping cost next week.",
+      icon: faGift,
+      colors: ['#28a745', '#85e085', '#28a745'],
+      badges: [
+        { name: "No Min Order", icon: faBox },
+        { name: "Fast Sync", icon: faRocket }
+      ],
+      btnText: "CLAIM NOW!"
+    },
+    {
+      id: 3,
+      title: "AI HEALTH-BOT",
+      subtitle: "Your personal AI doctor",
+      text: "Ask any health related question and get instant guidance.",
+      icon: faUserMd,
+      colors: ['#6f42c1', '#a29bfe', '#6f42c1'],
+      badges: [
+        { name: "24/7 Access", icon: faStethoscope },
+        { name: "Secure", icon: faShieldAlt }
+      ],
+      btnText: "START CHATTING"
+    },
+    {
+      id: 4,
+      title: "MED-REFILLS",
+      subtitle: "Never skip a dose",
+      text: "Smart reminders that automatically track your medicine stock.",
+      icon: faBell,
+      colors: ['#ff8c00', '#ffc107', '#ff8c00'],
+      badges: [
+        { name: "Auto Refill", icon: faPills },
+        { name: "Alerts", icon: faBell }
+      ],
+      btnText: "REFILL NOW"
+    }
+  ];
+
+  // Promo Logic
+  useEffect(() => {
+    // Randomly pick a promo
+    const randomIndex = Math.floor(Math.random() * PROMO_DATA.length);
+    setCurrentPromo(PROMO_DATA[randomIndex]);
+
+    setTimeout(() => {
+      setShowPromo(true);
+      Animated.spring(promoScaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+    }, 1500);
+  }, []);
+
+  const closePromo = async () => {
+    Animated.timing(promoScaleAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowPromo(false);
+    });
+  };
+
   const [locationAddress, setLocationAddress] = useState("Locating...");
 
   // Fetch Live Location
@@ -143,8 +233,7 @@ const HomeScreen = () => {
           o.paymentStatus === 'unpaid' &&
           o.paymentMethod === 'EasyPaisa' &&
           (!o.transactionId || o.transactionId === "") &&
-          (!o.completedAt || new Date(o.completedAt) > new Date(Date.now() - 24*60*60*1000)) // Only show if not completed more than 24h ago
-        )
+          (!o.completedAt || new Date(o.completedAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)) // Only show if not completed more than 24h ago
         );
         console.log(`Found ${pending.length} truly pending orders for ${email}`);
         setPendingOrderCount(pending.length);
@@ -298,6 +387,7 @@ const HomeScreen = () => {
   const topCategories = [
     { icon: faPills, label: "Medicines", screen: "Medicine" },
     { icon: faBell, label: "Medicine Reminder", screen: "MedicineReminder" },
+    { icon: faStethoscope, label: "MediApp AI", screen: "MediAppAI" },
     { icon: faComments, label: "Chat", screen: "Chat" },
   ];
 
@@ -342,7 +432,8 @@ const HomeScreen = () => {
               </Text>
             </LinearGradient>
           </TouchableOpacity>
-        )}
+        )
+        }
         <ScrollView
           contentContainerStyle={[styles.scrollContainer, { paddingTop: insets.top + hp(1) }]}
           refreshControl={
@@ -576,8 +667,54 @@ const HomeScreen = () => {
             </View>
           </View>
         </Modal>
-      </View>
-    </View>
+
+        {/* Promo Modal */}
+        <Modal
+          visible={showPromo}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={closePromo}
+        >
+          <View style={styles.promoOverlay}>
+            <Animated.View style={[styles.promoContent, { transform: [{ scale: promoScaleAnim }] }]}>
+              <LinearGradient
+                colors={currentPromo?.colors || ['#007bff', '#00c6ff', '#007bff']}
+                style={styles.promoGradient}
+              >
+                <TouchableOpacity style={styles.promoClose} onPress={closePromo}>
+                  <FontAwesomeIcon icon={faTimes} size={24} color="#fff" />
+                </TouchableOpacity>
+
+                <View style={styles.promoHeader}>
+                  <FontAwesomeIcon icon={currentPromo?.icon || faStar} size={60} color="#fff" />
+                  <Text style={styles.promoTitle}>{currentPromo?.title}</Text>
+                  <Text style={styles.promoSubtitle}>{currentPromo?.subtitle}</Text>
+                </View>
+
+                <View style={styles.promoBody}>
+                  <Text style={styles.promoText}>
+                    {currentPromo?.text}
+                  </Text>
+
+                  <View style={styles.promoFeatureRow}>
+                    {currentPromo?.badges.map((badge, idx) => (
+                      <View key={idx} style={styles.promoBadge}>
+                        <FontAwesomeIcon icon={badge.icon} size={18} color={currentPromo?.colors[0]} />
+                        <Text style={[styles.promoBadgeText, { color: currentPromo?.colors[0] }]}>{badge.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.promoBtn} onPress={closePromo}>
+                  <Text style={[styles.promoBtnText, { color: currentPromo?.colors[0] }]}>{currentPromo?.btnText}</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </Animated.View>
+          </View>
+        </Modal>
+      </View >
+    </View >
   );
 };
 
@@ -796,6 +933,99 @@ const getStyles = (isDarkMode, screenWidth, insets = { top: 0, bottom: 0 }) =>
       fontSize: 14,
       color: isDarkMode ? "#fff" : "#333",
       textAlign: "center",
+    },
+    // Promo Modal Styles
+    promoOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    promoContent: {
+      width: wp(85),
+      borderRadius: 25,
+      overflow: 'hidden',
+      elevation: 20,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.5,
+      shadowRadius: 15,
+    },
+    promoGradient: {
+      padding: wp(8),
+      alignItems: 'center',
+    },
+    promoClose: {
+      position: 'absolute',
+      right: 20,
+      top: 20,
+      zIndex: 10,
+    },
+    promoHeader: {
+      alignItems: 'center',
+      marginTop: 20,
+    },
+    promoTitle: {
+      fontSize: fontSize(28),
+      fontWeight: '900',
+      color: '#fff',
+      marginTop: 20,
+      letterSpacing: 2,
+    },
+    promoSubtitle: {
+      fontSize: fontSize(16),
+      color: 'rgba(255,255,255,0.9)',
+      marginTop: 5,
+      fontWeight: '600',
+    },
+    promoBody: {
+      marginTop: 30,
+      alignItems: 'center',
+    },
+    promoText: {
+      fontSize: fontSize(14),
+      color: '#fff',
+      textAlign: 'center',
+      lineHeight: 22,
+      opacity: 0.9,
+    },
+    promoFeatureRow: {
+      flexDirection: 'row',
+      gap: 15,
+      marginTop: 25,
+    },
+    promoBadge: {
+      backgroundColor: '#fff',
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 15,
+      paddingVertical: 10,
+      borderRadius: 20,
+      gap: 8,
+    },
+    promoBadgeText: {
+      color: '#007bff',
+      fontWeight: 'bold',
+      fontSize: 12,
+    },
+    promoBtn: {
+      backgroundColor: '#fff',
+      width: '100%',
+      paddingVertical: 15,
+      borderRadius: 15,
+      marginTop: 40,
+      alignItems: 'center',
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 5,
+      elevation: 5,
+    },
+    promoBtnText: {
+      color: '#007bff',
+      fontWeight: '900',
+      fontSize: 16,
+      letterSpacing: 1,
     },
     onlinePurchase: {
       backgroundColor: isDarkMode ? "#2a2a2a" : "#fff",

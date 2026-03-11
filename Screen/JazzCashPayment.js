@@ -23,7 +23,7 @@ const DepositScreen = () => {
   const { width } = useWindowDimensions();
   const navigation = useNavigation();
   const route = useRoute();
-  const { orderData } = route.params || {};
+  const { orderData, paymentType = "EasyPaisa" } = route.params || {};
   const [transactionConfirmed, setTransactionConfirmed] = useState(false);
 
   // Handle cancelled/aborted transaction
@@ -193,11 +193,17 @@ const DepositScreen = () => {
       >
         {/* Logo Container */}
         <View style={styles.logoContainer}>
-          <Image
-            source={require("../assets/easypaisa_logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          {paymentType === "EasyPaisa" ? (
+            <Image
+              source={require("../assets/easypaisa_logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={[styles.logo, styles.placeholderLogo]}>
+              <Text style={styles.placeholderLogoText}>JazzCash</Text>
+            </View>
+          )}
           <Text style={styles.separator}>|</Text>
           <Image
             source={require("../assets/LogoBGR.png")}
@@ -207,7 +213,7 @@ const DepositScreen = () => {
         </View>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>MediApp Payment Method</Text>
+          <Text style={styles.title}>MediApp {paymentType} Payment</Text>
           <Text style={styles.instructionText}>
             You are purchasing the following products:
           </Text>
@@ -253,9 +259,9 @@ const DepositScreen = () => {
           </View>
 
           {/* Note */}
-          <View style={styles.noteBox}>
-            <Text style={styles.noteText}>
-              Please pay exactly the amount shown above to the EasyPaisa account.
+          <View style={[styles.noteBox, paymentType === "JazzCash" && { borderColor: "#dc3545", backgroundColor: "#fff5f5" }]}>
+            <Text style={[styles.noteText, paymentType === "JazzCash" && { color: "#dc3545" }]}>
+              Please pay exactly the amount shown above to the {paymentType} account.
               Do not pay less or more, or your transaction will not be accepted.
             </Text>
           </View>
@@ -267,30 +273,30 @@ const DepositScreen = () => {
           {/* Payment Details Card */}
           <View style={styles.detailCard}>
             <Text style={styles.detailText}>
-              ایزی پیسہ والیٹ کا نام / Easypaisa Account Name:{" "}
-              <Text style={styles.boldText}>Shakeel Ahmad</Text>
+              {paymentType} والیٹ کا نام / {paymentType} Account Name:{" "}
+              <Text style={styles.boldText}>{paymentType === "EasyPaisa" ? "Shakeel Ahmad" : "Admin Name"}</Text>
             </Text>
             <Text style={styles.detailText}>
-              ایزی پیسہ کا والٹ نمبر / EasyPaisa Wallet Number:{" "}
-              <Text style={styles.boldText}>03499535156</Text>
+              {paymentType} کا والٹ نمبر / {paymentType} Wallet Number:{" "}
+              <Text style={styles.boldText}>{paymentType === "EasyPaisa" ? "03499535156" : "03XXXXXXXXX"}</Text>
             </Text>
           </View>
 
           {/* Form Inputs */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>:ایزی پیسہ والیٹ نمبر / EasyPaisa Wallet Number</Text>
+            <Text style={styles.inputLabel}>:{paymentType} والیٹ نمبر / {paymentType} Wallet Number</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="Enter wallet number"
+              placeholder={`Enter ${paymentType} number`}
               keyboardType="numeric"
               maxLength={11}
               value={walletNumber}
               onChangeText={setWalletNumber}
             />
-            <Text style={styles.inputLabel}>:ایزی پیسہ والیٹ کا نام / EasyPaisa Wallet Name</Text>
+            <Text style={styles.inputLabel}>:{paymentType} والیٹ کا نام / {paymentType} Wallet Name</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="Enter wallet name"
+              placeholder={`Enter ${paymentType} name`}
               value={walletName}
               onChangeText={setWalletName}
             />
@@ -305,11 +311,11 @@ const DepositScreen = () => {
 
           <View style={styles.warningBox}>
             <Text style={styles.warningText}>
-              ⚠️ It is forbidden to send money via Jazzcash or Bank Transfer to the EasyPaisa account.
+              ⚠️ It is forbidden to send money via other providers to the {paymentType} account.
               If conditions aren't met, the company isn't responsible for your funds.
             </Text>
             <Text style={styles.warningText}>
-              ⚠️ ایزی پیسہ اکاؤنٹ میں جیز کیش یا بینک ٹرانسفر کے ذریعے رقم بھیجنا منع ہے، اگر شرائط پوری نہیں ہوتیں، تو کمپنی آپ کے فنڈز کے لیے ذمہ دار نہیں ہے۔
+              ⚠️ {paymentType} اکاؤنٹ میں کسی اور سروس کے ذریعے رقم بھیجنا منع ہے، اگر شرائط پوری نہیں ہوتیں، تو کمپنی آپ کے فنڈز کے لیے ذمہ دار نہیں ہے۔
             </Text>
           </View>
 
@@ -376,19 +382,25 @@ const DepositScreen = () => {
                 style={[styles.logoAnimation, { opacity: fadeAnim }]}
                 resizeMode="contain"
               />
-              <Animated.Image
-                source={require("../assets/easypaisa_logo.png")}
-                style={[
-                  styles.logoAnimation,
-                  {
-                    opacity: fadeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 0],
-                    }),
-                  },
-                ]}
-                resizeMode="contain"
-              />
+              {paymentType === "EasyPaisa" ? (
+                <Animated.Image
+                  source={require("../assets/easypaisa_logo.png")}
+                  style={[
+                    styles.logoAnimation,
+                    {
+                      opacity: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 0],
+                      }),
+                    },
+                  ]}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={[styles.logoAnimation, styles.placeholderLogo, { backgroundColor: '#dc3545', width: 80, height: 80, borderRadius: 40 }]}>
+                  <Text style={[styles.placeholderLogoText, { fontSize: 10 }]}>JazzCash</Text>
+                </View>
+              )}
             </View>
             <Text style={styles.overlayTitle}>Transaction Pending</Text>
             <Text style={styles.overlayMessage}>
@@ -407,11 +419,17 @@ const DepositScreen = () => {
           <ScrollView contentContainerStyle={styles.acceptedOverlayContentScroll}>
             <View style={styles.acceptedOverlayContent}>
               <View style={styles.logoContainerOverlay}>
-                <Image
-                  source={require("../assets/easypaisa_logo.png")}
-                  style={styles.logoOverlay}
-                  resizeMode="contain"
-                />
+                {paymentType === "EasyPaisa" ? (
+                  <Image
+                    source={require("../assets/easypaisa_logo.png")}
+                    style={styles.logoOverlay}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View style={[styles.logoOverlay, styles.placeholderLogo, { width: 50, height: 50, borderRadius: 25 }]}>
+                    <Text style={[styles.placeholderLogoText, { fontSize: 8 }]}>JazzCash</Text>
+                  </View>
+                )}
                 <Text style={styles.separatorOverlay}>|</Text>
                 <Image
                   source={require("../assets/LogoBGR.png")}
@@ -497,6 +515,17 @@ const styles = StyleSheet.create({
   contentContainer: { paddingHorizontal: 20 },
   logoContainer: { flexDirection: "row", justifyContent: "center", alignItems: "center", marginBottom: 25 },
   logo: { width: 120, height: 120 },
+  placeholderLogo: {
+    backgroundColor: '#dc3545',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 60,
+  },
+  placeholderLogoText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
   separator: { fontSize: 28, color: "#007bff", marginHorizontal: 10, fontWeight: "200" },
   title: { fontSize: 22, fontWeight: "700", color: "#007bff", textAlign: "center", marginBottom: 15 },
   instructionText: { fontSize: 15, color: "#6c757d", textAlign: "center", lineHeight: 22, marginBottom: 15 },

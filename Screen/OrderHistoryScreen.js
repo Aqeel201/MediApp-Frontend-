@@ -78,6 +78,25 @@ const OrderHistoryScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
+  const cancelOrder = async (orderId) => {
+    if (!orderId) return;
+    try {
+      const response = await fetch(`https://dashboard-backend-xrss.vercel.app/api/order/${orderId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to cancel order');
+      }
+      await fetchOrders();
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Cancel order error:', error);
+    }
+  };
+
   // Filter orders by searching for medicine names within cart items
   const filteredOrders = orders.filter(order =>
     order.cartItems && order.cartItems.some(item =>
@@ -136,7 +155,6 @@ const OrderHistoryScreen = ({ navigation }) => {
                     </View>
                   )}
                 </View>
-              </View>
               </View>
               <View style={styles.medicinesContainer}>
                 {item.cartItems && item.cartItems.slice(0, 2).map((medicine, index) => (
@@ -271,6 +289,15 @@ const OrderHistoryScreen = ({ navigation }) => {
                     <Text style={styles.totalLabel}>Total:</Text>
                     <Text style={styles.totalAmount}>Rs. {selectedOrder.orderTotal?.toFixed(2) || '0.00'}</Text>
                   </View>
+
+                  {selectedOrder.status === 'pending' && (
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => cancelOrder(selectedOrder._id)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel Order</Text>
+                    </TouchableOpacity>
+                  )}
                 </ScrollView>
               </View>
             )}
@@ -487,6 +514,18 @@ const getStyles = (isDarkMode, width = 375, height = 667) => StyleSheet.create({
     color: isDarkMode ? '#fff' : '#000',
     fontSize: 18,
     fontWeight: '700',
+  },
+  cancelButton: {
+    marginTop: 16,
+    backgroundColor: '#ef4444',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
   },
   completePaymentButton: {
     backgroundColor: '#28a745',

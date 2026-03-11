@@ -35,6 +35,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import ToggleSwitch from "toggle-switch-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import PremiumModal from "./PremiumModal";
 
 const cities = ["Karachi", "Lahore", "Islamabad", "Quetta", "Peshawar", "Skardu"];
 
@@ -46,6 +47,7 @@ const ProfileScreen = () => {
   const [userData, setUserData] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [modal, setModal] = useState({ visible: false, title: '', message: '', type: 'info' });
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const styles = getStyles(isDarkMode, insets);
@@ -81,14 +83,13 @@ const ProfileScreen = () => {
   };
 
   // Logout: clear login data from AsyncStorage and navigate to Login screen
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem("authToken");
-      await AsyncStorage.removeItem("user");
-      navigation.navigate("Login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+  const handleLogout = () => {
+    setModal({
+      visible: true,
+      title: "Confirm Logout",
+      message: "Are you sure you want to end your session?",
+      type: "logout"
+    });
   };
 
   return (
@@ -222,6 +223,29 @@ const ProfileScreen = () => {
         </View>
       </Modal>
 
+      <PremiumModal
+        visible={modal.visible}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={async () => {
+          if (modal.type === 'logout') {
+            try {
+              await AsyncStorage.removeItem("authToken");
+              await AsyncStorage.removeItem("user");
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Login" }],
+              });
+            } catch (error) {
+              console.error("Logout error:", error);
+            }
+          }
+          setModal({ ...modal, visible: false });
+        }}
+        onCancel={modal.type === 'logout' ? () => setModal({ ...modal, visible: false }) : null}
+        confirmText={modal.type === 'logout' ? 'Logout' : 'Got it'}
+      />
       <Footer />
     </View>
   );
