@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import React, { useEffect, useRef, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -70,6 +70,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StripeProvider } from '@stripe/stripe-react-native';
 
 const Stack = createStackNavigator();
+const navigationRef = createNavigationContainerRef();
 
 import PremiumSplash from './Screen/PremiumSplash';
 
@@ -199,6 +200,17 @@ const NotificationManager = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const responseSub = Notifications.addNotificationResponseReceivedListener(() => {
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('NotificationPage');
+      }
+    });
+    return () => {
+      responseSub?.remove?.();
+    };
+  }, []);
+
   return null;
 };
 
@@ -232,7 +244,7 @@ export default function App() {
           <ThemeProvider>
             <CartProvider>
               <NotificationManager />
-              <NavigationContainer>
+              <NavigationContainer ref={navigationRef}>
                 <StatusBar style="auto" />
                 <StripeProvider publishableKey="pk_test_51Pzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz">
                   {(initialRoute === null || showSplash) ? (

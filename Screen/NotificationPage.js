@@ -5,9 +5,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,16 +26,17 @@ const NotificationPage = () => {
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const styles = getStyles(isDarkMode, insets);
 
-  const fetchNotifications = async (markRead = true) => {
-    setLoading(true);
+  const fetchNotifications = async (markRead = true, withSpinner = true) => {
+    if (withSpinner) setLoading(true);
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (!token) {
         setItems([]);
-        setLoading(false);
+        if (withSpinner) setLoading(false);
         return;
       }
       const resp = await axios.get(`${API_BASE}/api/notifications`, {
@@ -54,7 +55,8 @@ const NotificationPage = () => {
     } catch (err) {
       console.error('Failed to load notifications', err?.message || err);
     } finally {
-      setLoading(false);
+      if (withSpinner) setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -81,10 +83,19 @@ const NotificationPage = () => {
         <Text style={styles.headerText}>Notifications</Text>
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        <TouchableOpacity onPress={fetchNotifications} style={styles.refreshBtn}>
-          <Text style={styles.refreshText}>Refresh</Text>
-        </TouchableOpacity>
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              fetchNotifications(true, false);
+            }}
+            tintColor="#0d6efd"
+          />
+        }
+      >
         {loading ? (
           <ActivityIndicator style={{ marginTop: 20 }} color="#0d6efd" />
         ) : items.length ? (
@@ -154,20 +165,6 @@ const getStyles = (isDarkMode, insets = { top: 0, bottom: 0 }) => StyleSheet.cre
     marginTop: 5,
     fontSize: 14,
     color: isDarkMode ? "#ccc" : "#666",
-  },
-  refreshBtn: {
-    alignSelf: 'flex-end',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#0d6efd",
-    marginBottom: 10,
-  },
-  refreshText: {
-    color: "#0d6efd",
-    fontWeight: "bold",
-    fontSize: 12,
   },
   emptyText: {
     textAlign: 'center',
