@@ -33,14 +33,14 @@ const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
 const GROQ_MODEL = process.env.EXPO_PUBLIC_GROQ_MODEL || 'llama-3.1-8b-instant';
 
 const CHAT_FONT = Platform.select({
-  ios: 'AvenirNext-Regular',
-  android: 'Roboto',
+  ios: 'System',
+  android: 'sans-serif',
   default: 'System',
 });
 
 const CHAT_FONT_BOLD = Platform.select({
-  ios: 'AvenirNext-DemiBold',
-  android: 'Roboto-Medium',
+  ios: 'System',
+  android: 'sans-serif-medium',
   default: 'System',
 });
 
@@ -67,6 +67,7 @@ const MediAppAI = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [clipboardAvailable, setClipboardAvailable] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
   const listRef = useRef(null);
   const inputRef = useRef(null);
@@ -90,6 +91,16 @@ const MediAppAI = () => {
       showSub.remove();
       hideSub.remove();
     };
+  }, []);
+
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line global-require
+      require('expo-clipboard');
+      setClipboardAvailable(true);
+    } catch (err) {
+      setClipboardAvailable(false);
+    }
   }, []);
 
   const fetchChats = async () => {
@@ -454,9 +465,11 @@ const MediAppAI = () => {
           <View style={styles.actionSheet}>
             <Text style={styles.actionTitle}>Message options</Text>
             <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.actionBtn} onPress={handleCopy}>
-                <Text style={styles.actionBtnText}>Copy</Text>
-              </TouchableOpacity>
+              {clipboardAvailable ? (
+                <TouchableOpacity style={styles.actionBtn} onPress={handleCopy}>
+                  <Text style={styles.actionBtnText}>Copy</Text>
+                </TouchableOpacity>
+              ) : null}
               {actionMessage?.role === 'user' ? (
                 <TouchableOpacity style={styles.actionBtn} onPress={handleEdit}>
                   <Text style={styles.actionBtnText}>Edit</Text>
@@ -604,9 +617,10 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       borderColor: isDarkMode ? '#111827' : '#e5e7eb',
     },
     bubbleText: {
-      fontSize: fontSize(14),
-      lineHeight: 20,
+      fontSize: fontSize(15),
+      lineHeight: 22,
       fontFamily: CHAT_FONT,
+      letterSpacing: 0.2,
     },
     userText: {
       color: '#fff',
