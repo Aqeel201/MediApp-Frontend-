@@ -62,8 +62,9 @@ const LocationScreen = () => {
 
   const [modal, setModal] = useState({ visible: false, title: '', message: '', type: 'info' });
   const [isDetecting, setIsDetecting] = useState(false);
-  const [mapVisible, setMapVisible] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState(null);
+  const mapRef = useRef(null);
+  const [mapKey, setMapKey] = useState(0);
 
   const progressLine1Anim = useRef(new Animated.Value(1)).current;
   const progressLine2Anim = useRef(new Animated.Value(0)).current;
@@ -156,6 +157,15 @@ const LocationScreen = () => {
     }
   };
 
+  useEffect(() => {
+    if (formData.location) {
+      setMapKey((prev) => prev + 1);
+    }
+  }, [formData.location?.latitude, formData.location?.longitude]);
+
+  const initialLat = formData.location?.latitude || 30.3753;
+  const initialLng = formData.location?.longitude || 69.3451;
+
   const leafletHtml = `
   <!DOCTYPE html>
   <html>
@@ -164,6 +174,7 @@ const LocationScreen = () => {
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <style>
         html, body, #map { height: 100%; margin: 0; }
+        #map { border-radius: 12px; overflow: hidden; }
         .hint {
           position: absolute;
           top: 12px;
@@ -177,15 +188,79 @@ const LocationScreen = () => {
           font-size: 12px;
           z-index: 1000;
         }
+        .search {
+          position: absolute;
+          top: 46px;
+          left: 12px;
+          right: 12px;
+          z-index: 1001;
+          display: flex;
+          gap: 6px;
+        }
+        .search input {
+          flex: 1;
+          padding: 8px 10px;
+          border-radius: 10px;
+          border: 1px solid #e2e8f0;
+          font-size: 12px;
+        }
+        .search button {
+          padding: 8px 12px;
+          border-radius: 10px;
+          border: none;
+          background: #2563eb;
+          color: #fff;
+          font-size: 12px;
+        }
+        .results {
+          position: absolute;
+          top: 84px;
+          left: 12px;
+          right: 12px;
+          max-height: 140px;
+          overflow: auto;
+          background: #fff;
+          border-radius: 10px;
+          border: 1px solid #e2e8f0;
+          z-index: 1002;
+          font-family: Arial, sans-serif;
+          font-size: 12px;
+          display: none;
+        }
+        .result-item {
+          padding: 8px 10px;
+          border-bottom: 1px solid #f1f5f9;
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-item:hover { background: #f8fafc; }
+        .toggle {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          background: #0f172a;
+          color: #fff;
+          padding: 6px 10px;
+          border-radius: 999px;
+          font-size: 11px;
+          z-index: 1001;
+        }
       </style>
     </head>
     <body>
       <div class="hint">Tap map to set location</div>
+      <div class="toggle" id="toggleBtn">Satellite</div>
+      <div class="search">
+        <input id="searchInput" placeholder="Search location..." />
+        <button id="searchBtn">Search</button>
+      </div>
+      <div id="results" class="results"></div>
       <div id="map"></div>
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
       <script>
-        var map = L.map('map').setView([30.3753, 69.3451], 5);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        var map = L.map('map').setView([${initialLat}, ${initialLng}], 6);
+        var street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+        var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
+        street.addTo(map);
         var marker;
         function setMarker(lat, lng) {
           if (marker) { map.removeLayer(marker); }
@@ -196,6 +271,54 @@ const LocationScreen = () => {
           var lng = e.latlng.lng;
           setMarker(lat, lng);
           window.ReactNativeWebView.postMessage(JSON.stringify({ lat: lat, lng: lng }));
+        });
+
+        var isSatellite = false;
+        var toggleBtn = document.getElementById('toggleBtn');
+        toggleBtn.addEventListener('click', function() {
+          isSatellite = !isSatellite;
+          if (isSatellite) {
+            map.removeLayer(street);
+            satellite.addTo(map);
+            toggleBtn.textContent = 'Street';
+          } else {
+            map.removeLayer(satellite);
+            street.addTo(map);
+            toggleBtn.textContent = 'Satellite';
+          }
+        });
+
+        var results = document.getElementById('results');
+        function renderResults(items) {
+          results.innerHTML = '';
+          if (!items.length) {
+            results.style.display = 'none';
+            return;
+          }
+          items.forEach(function(item) {
+            var div = document.createElement('div');
+            div.className = 'result-item';
+            div.textContent = item.display_name;
+            div.addEventListener('click', function() {
+              var lat = parseFloat(item.lat);
+              var lng = parseFloat(item.lon);
+              setMarker(lat, lng);
+              map.setView([lat, lng], 14);
+              window.ReactNativeWebView.postMessage(JSON.stringify({ lat: lat, lng: lng }));
+              results.style.display = 'none';
+            });
+            results.appendChild(div);
+          });
+          results.style.display = 'block';
+        }
+
+        document.getElementById('searchBtn').addEventListener('click', function() {
+          var q = document.getElementById('searchInput').value.trim();
+          if (!q) return;
+          fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q))
+            .then(r => r.json())
+            .then(data => renderResults(data.slice(0, 6)))
+            .catch(() => { results.style.display = 'none'; });
         });
       </script>
     </body>
@@ -346,28 +469,37 @@ const LocationScreen = () => {
           <View style={styles.locationRow}>
             <TouchableOpacity
               style={styles.locationButton}
-              onPress={() => setMapVisible(true)}
-            >
-              <MapPin size={18} color="#fff" />
-              <Text style={styles.locationButtonText}>SET LOCATION ON MAP</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.gpsButton, { opacity: isDetecting ? 0.7 : 1 }]}
               onPress={detectLocation}
               disabled={isDetecting}
             >
               {isDetecting ? (
-                <ActivityIndicator color="#2563eb" size="small" />
+                <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.gpsButtonText}>Use GPS</Text>
+                <MapPin size={18} color="#fff" />
               )}
+              <Text style={styles.locationButtonText}>USE CURRENT LOCATION</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.note}>
             {formData.location
               ? `Selected: ${formData.location.latitude.toFixed(4)}, ${formData.location.longitude.toFixed(4)}`
-              : "No location selected yet."}
+              : "Select a location from the map below."}
           </Text>
+          <View style={styles.mapBox}>
+            <WebView
+              key={mapKey}
+              ref={mapRef}
+              source={{ html: leafletHtml }}
+              onMessage={(event) => {
+                try {
+                  const data = JSON.parse(event.nativeEvent.data);
+                  const coords = { latitude: data.lat, longitude: data.lng };
+                  setSelectedCoords(coords);
+                  applyLocation(coords);
+                } catch (e) {}
+              }}
+            />
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -509,32 +641,6 @@ const LocationScreen = () => {
         onConfirm={() => setModal({ ...modal, visible: false })}
       />
 
-      <Modal visible={mapVisible} animationType="slide" onRequestClose={() => setMapVisible(false)}>
-        <View style={styles.mapHeader}>
-          <TouchableOpacity onPress={() => setMapVisible(false)}>
-            <Text style={styles.mapHeaderBtn}>Close</Text>
-          </TouchableOpacity>
-          <Text style={styles.mapHeaderTitle}>Select Location</Text>
-          <TouchableOpacity
-            onPress={async () => {
-              await applyLocation(selectedCoords);
-              setMapVisible(false);
-            }}
-            disabled={!selectedCoords}
-          >
-            <Text style={[styles.mapHeaderBtn, !selectedCoords && { opacity: 0.5 }]}>Use</Text>
-          </TouchableOpacity>
-        </View>
-        <WebView
-          source={{ html: leafletHtml }}
-          onMessage={(event) => {
-            try {
-              const data = JSON.parse(event.nativeEvent.data);
-              setSelectedCoords({ latitude: data.lat, longitude: data.lng });
-            } catch (e) {}
-          }}
-        />
-      </Modal>
     </View>
   );
 };
@@ -596,33 +702,19 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     borderRadius: 12,
     gap: 8,
     marginBottom: 10,
-    flex: 1,
-    marginRight: 8,
+    width: "100%",
   },
   locationButtonText: { color: "#fff", fontWeight: "bold", fontSize: 12 },
-  locationRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  gpsButton: {
-    borderWidth: 1,
-    borderColor: "#2563eb",
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: "transparent",
-  },
-  gpsButtonText: { color: "#2563eb", fontWeight: "700", fontSize: 12 },
+  locationRow: { flexDirection: "row", alignItems: "center" },
   note: { fontSize: 11, color: "#888", textAlign: 'center' },
-  mapHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+  mapBox: {
+    height: 220,
+    borderRadius: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    marginTop: 10,
   },
-  mapHeaderTitle: { fontWeight: "700", fontSize: 14 },
-  mapHeaderBtn: { color: "#2563eb", fontWeight: "700", fontSize: 13 },
   checkboxContainer: { flexDirection: "row", alignItems: "center", marginTop: 5 },
   checkbox: { width: 22, height: 22, borderWidth: 2, borderRadius: 6, marginRight: 10, justifyContent: 'center', alignItems: 'center' },
   checkboxInner: { width: 12, height: 12, backgroundColor: '#007bff', borderRadius: 3 },

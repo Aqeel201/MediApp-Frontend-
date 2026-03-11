@@ -18,7 +18,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faShieldAlt, faStethoscope, faHistory, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
@@ -40,7 +39,6 @@ const WELCOME_MESSAGE =
 const MediAppAI = () => {
   const { width, height } = useWindowDimensions();
   const navigation = useNavigation();
-  const tabBarHeight = useBottomTabBarHeight();
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -324,7 +322,7 @@ const MediAppAI = () => {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? tabBarHeight : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom : 0}
         style={styles.body}
       >
         <FlatList
