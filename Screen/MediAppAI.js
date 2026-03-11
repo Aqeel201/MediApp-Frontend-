@@ -318,44 +318,59 @@ const MediAppAI = () => {
   const escapeRegExp = (str) => String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   const renderMessageText = (item) => {
-    if (!item?.content) return null;
-    if (item.role !== 'assistant' || !Array.isArray(item.suggestions) || !item.suggestions.length) {
+    try {
+      if (!item?.content) return null;
+      if (item.role !== 'assistant' || !Array.isArray(item.suggestions) || !item.suggestions.length) {
+        return (
+          <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : styles.assistantText]}>
+            {item.content}
+          </Text>
+        );
+      }
+
+      const suggestionMap = new Map(
+        item.suggestions
+          .map((m) => [String(m.name || '').toLowerCase(), m])
+          .filter(([k]) => k)
+      );
+      const names = Array.from(suggestionMap.keys()).sort((a, b) => b.length - a.length);
+      if (!names.length) {
+        return (
+          <Text style={[styles.bubbleText, styles.assistantText]}>
+            {item.content}
+          </Text>
+        );
+      }
+      const regex = new RegExp(`(${names.map(escapeRegExp).join('|')})`, 'gi');
+      const parts = String(item.content).split(regex).filter((p) => p !== '');
+
       return (
-        <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : styles.assistantText]}>
-          {item.content}
+        <Text style={[styles.bubbleText, styles.assistantText]}>
+          {parts.map((part, idx) => {
+            const key = part.toLowerCase();
+            const med = suggestionMap.get(key);
+            if (!med) {
+              return <Text key={`${part}_${idx}`}>{part}</Text>;
+            }
+            return (
+              <Text
+                key={`${part}_${idx}`}
+                style={styles.medicineLink}
+                onPress={() => navigation.navigate('MedicineDetail', { medicine: med })}
+              >
+                {part}
+              </Text>
+            );
+          })}
+        </Text>
+      );
+    } catch (err) {
+      return (
+        <Text style={[styles.bubbleText, item?.role === 'user' ? styles.userText : styles.assistantText]}>
+          {item?.content || ''}
         </Text>
       );
     }
-
-    const suggestionMap = new Map(
-      item.suggestions
-        .map((m) => [String(m.name || '').toLowerCase(), m])
-        .filter(([k]) => k)
-    );
-    const names = Array.from(suggestionMap.keys()).sort((a, b) => b.length - a.length);
-    const regex = new RegExp(`(${names.map(escapeRegExp).join('|')})`, 'gi');
-    const parts = String(item.content).split(regex).filter((p) => p !== '');
-
-    return (
-      <Text style={[styles.bubbleText, styles.assistantText]}>
-        {parts.map((part, idx) => {
-          const key = part.toLowerCase();
-          const med = suggestionMap.get(key);
-          if (!med) {
-            return <Text key={`${part}_${idx}`}>{part}</Text>;
-          }
-          return (
-            <Text
-              key={`${part}_${idx}`}
-              style={styles.medicineLink}
-              onPress={() => navigation.navigate('MedicineDetail', { medicine: med })}
-            >
-              {part}
-            </Text>
-          );
-        })}
-      </Text>
-    );
   };
 
   const openActions = (item, index) => {

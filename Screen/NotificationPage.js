@@ -1,5 +1,5 @@
 // NotificationPage.js
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,31 +15,50 @@ import { Bell, ArrowLeft, Home, ShoppingBag, User } from 'lucide-react-native';
 import { wp, hp, fontSize } from "./responsive";
 import { useTheme } from "./ThemeContext";
 import Footer from "./Footer"; // Import the reusable Footer component
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
-const notifications = [
-  {
-    id: 1,
-    title: "New Arrival",
-    message: "New batch of Paracetamol has arrived at the medical store.",
-  },
-  {
-    id: 2,
-    title: "Discount Offer",
-    message: "20% off on all herbal medicines this week.",
-  },
-  {
-    id: 3,
-    title: "Vaccine Availability",
-    message: "COVID-19 vaccines are now available at our store.",
-  },
-];
+const API_BASE = 'https://dashboard-backend-xrss.vercel.app';
 
 const NotificationPage = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const styles = getStyles(isDarkMode, insets);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+      const resp = await axios.get(`${API_BASE}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 15000,
+      });
+      const data = Array.isArray(resp.data) ? resp.data : [];
+      setItems(data);
+      await axios.put(
+        `${API_BASE}/api/notifications/read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` }, timeout: 15000 }
+      );
+    } catch (err) {
+      console.error('Failed to load notifications', err?.message || err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -60,15 +80,27 @@ const NotificationPage = () => {
       </View>
 
       <ScrollView style={styles.scrollView}>
-        {notifications.map((notification) => (
-          <TouchableOpacity
-            key={notification.id}
-            style={styles.notificationItem}
-          >
-            <Text style={styles.notificationTitle}>{notification.title}</Text>
-            <Text style={styles.notificationMessage}>{notification.message}</Text>
-          </TouchableOpacity>
-        ))}
+        <TouchableOpacity onPress={fetchNotifications} style={styles.refreshBtn}>
+          <Text style={styles.refreshText}>Refresh</Text>
+        </TouchableOpacity>
+        {loading ? (
+          <ActivityIndicator style={{ marginTop: 20 }} color="#0d6efd" />
+        ) : items.length ? (
+          items.map((notification) => (
+            <TouchableOpacity
+              key={notification._id || notification.id}
+              style={styles.notificationItem}
+            >
+              <Text style={styles.notificationTitle}>{notification.title}</Text>
+              <Text style={styles.notificationMessage}>{notification.message}</Text>
+              <Text style={styles.notificationDate}>
+                {notification.date ? new Date(notification.date).toLocaleString() : ''}
+              </Text>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={styles.emptyText}>No notifications yet.</Text>
+        )}
       </ScrollView>
 
       {/* Reusable Modern Footer */}
@@ -106,6 +138,11 @@ const getStyles = (isDarkMode, insets = { top: 0, bottom: 0 }) => StyleSheet.cre
     marginBottom: 10,
     backgroundColor: isDarkMode ? "#333" : "white",
   },
+  notificationDate: {
+    marginTop: 6,
+    fontSize: 12,
+    color: isDarkMode ? "#9ca3af" : "#94a3b8",
+  },
   notificationTitle: {
     fontSize: 16,
     fontWeight: "bold",
@@ -114,6 +151,25 @@ const getStyles = (isDarkMode, insets = { top: 0, bottom: 0 }) => StyleSheet.cre
   notificationMessage: {
     marginTop: 5,
     fontSize: 14,
+    color: isDarkMode ? "#ccc" : "#666",
+  },
+  refreshBtn: {
+    alignSelf: 'flex-end',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#0d6efd",
+    marginBottom: 10,
+  },
+  refreshText: {
+    color: "#0d6efd",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 20,
     color: isDarkMode ? "#ccc" : "#666",
   },
 });
