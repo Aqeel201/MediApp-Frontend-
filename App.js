@@ -57,7 +57,7 @@ import ReminderScheduleScreen from './Screen/ReminderScheduleScreen';
 import SmartInteractionScreen from './Screen/SmartInteractionScreen';
 import MedicineMatchGame from './Screen/MedicineMatchGame';
 import Chat from './Screen/Chat'; // Import the chat screen
-import MediAppAISimple from './Screen/MediAppAISimple';
+import MediAppAI from './Screen/MediAppAI';
 
 // Import providers
 import { ThemeProvider } from './Screen/ThemeContext';
@@ -163,7 +163,7 @@ export default function App() {
                       <Stack.Screen name="MedicineReminder" component={MedicineReminderScreen} options={{ headerShown: false }} />
                       <Stack.Screen name="SmartInteraction" component={SmartInteractionScreen} options={{ headerShown: false }} />
                       <Stack.Screen name="MedicineMatchGame" component={MedicineMatchGame} options={{ headerShown: false }} />
-                      <Stack.Screen name="MediAppAI" component={MediAppAISimple} options={{ headerShown: false }} />
+                      <Stack.Screen name="MediAppAI" component={MediAppAI} options={{ headerShown: false }} />
                       <Stack.Screen name="ReminderSchedule" component={ReminderScheduleScreen} options={{ headerShown: false }} />
                       <Stack.Screen name="Chat" component={Chat} options={{ headerShown: false }} />
                     </Stack.Navigator>

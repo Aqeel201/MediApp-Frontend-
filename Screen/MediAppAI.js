@@ -48,7 +48,7 @@ const WELCOME_MESSAGE =
   "Assalam-o-Alaikum! I'm MediApp AI. I can only answer medical and health-related questions. " +
   "For emergencies, contact a doctor or local emergency services immediately.";
 
-const SAFE_MODE = true;
+const SAFE_MODE = false;
 
 class ScreenErrorBoundary extends React.Component {
   constructor(props) {
