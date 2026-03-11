@@ -92,7 +92,8 @@ const LocationScreen = () => {
       })
       .catch((error) => console.error("AsyncStorage error:", error));
 
-    // No auto-detect on mount
+    // Show current location first if permission is granted
+    detectLocation();
   }, []);
 
   const detectLocation = async () => {
@@ -112,6 +113,7 @@ const LocationScreen = () => {
       if (location && location.coords) {
         const coords = { latitude: location.coords.latitude, longitude: location.coords.longitude };
         setFormData(prev => ({ ...prev, location: coords }));
+        setSelectedCoords(coords);
 
         let address = await Location.reverseGeocodeAsync(coords);
         if (address && address.length > 0) {
@@ -166,6 +168,7 @@ const LocationScreen = () => {
 
   const initialLat = formData.location?.latitude || 30.3753;
   const initialLng = formData.location?.longitude || 69.3451;
+  const hasInitial = formData.location ? 'true' : 'false';
 
   const leafletHtml = `
   <!DOCTYPE html>
@@ -258,7 +261,7 @@ const LocationScreen = () => {
       <div id="map"></div>
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
       <script>
-        var map = L.map('map').setView([${initialLat}, ${initialLng}], 6);
+        var map = L.map('map').setView([${initialLat}, ${initialLng}], ${formData.location ? 14 : 6});
         var street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
         var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
         street.addTo(map);
@@ -266,6 +269,9 @@ const LocationScreen = () => {
         function setMarker(lat, lng) {
           if (marker) { map.removeLayer(marker); }
           marker = L.marker([lat, lng]).addTo(map);
+        }
+        if (${hasInitial}) {
+          setMarker(${initialLat}, ${initialLng});
         }
         map.on('click', function(e) {
           var lat = e.latlng.lat;
