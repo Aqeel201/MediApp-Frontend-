@@ -17,7 +17,6 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -355,9 +354,17 @@ const MediAppAI = () => {
 
   const handleCopy = async () => {
     if (!actionMessage?.content) return;
-    await Clipboard.setStringAsync(actionMessage.content);
-    setShowActions(false);
-    Alert.alert('Copied', 'Message copied to clipboard.');
+    try {
+      // Lazy-load clipboard to avoid native module crash on older builds
+      // eslint-disable-next-line global-require
+      const Clipboard = require('expo-clipboard');
+      await Clipboard.setStringAsync(actionMessage.content);
+      Alert.alert('Copied', 'Message copied to clipboard.');
+    } catch (err) {
+      Alert.alert('Copy unavailable', 'Please update the app from the store to enable copy.');
+    } finally {
+      setShowActions(false);
+    }
   };
 
   const handleEdit = () => {
