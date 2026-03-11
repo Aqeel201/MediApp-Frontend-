@@ -12,6 +12,7 @@ import {
   RefreshControl,
   Modal,
   useWindowDimensions,
+  Platform,
 } from "react-native";
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,6 +60,11 @@ import axios from "axios";
 import { useTheme } from "./ThemeContext";
 import Footer from "./Footer";
 import * as Updates from 'expo-updates';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+
+const API_BASE = 'https://dashboard-backend-xrss.vercel.app';
 
 const HomeScreen = () => {
   const { width: screenWidth } = useWindowDimensions();
@@ -84,6 +90,51 @@ const HomeScreen = () => {
   const [showPromo, setShowPromo] = useState(false);
   const [currentPromo, setCurrentPromo] = useState(null);
   const promoScaleAnim = useRef(new Animated.Value(0)).current;
+
+  const registerForPushNotifications = async () => {
+    try {
+      if (!Device.isDevice) return;
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const request = await Notifications.requestPermissionsAsync();
+        finalStatus = request.status;
+      }
+      if (finalStatus !== 'granted') return;
+
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#0d6efd',
+        });
+      }
+
+      const projectId =
+        Constants.expoConfig?.extra?.eas?.projectId ||
+        Constants.easConfig?.projectId;
+      if (!projectId) return;
+      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+      const pushToken = tokenData?.data;
+      if (!pushToken) return;
+
+      const authToken = await AsyncStorage.getItem('authToken');
+      if (!authToken) return;
+
+      await axios.post(
+        `${API_BASE}/api/notifications/register`,
+        { token: pushToken, platform: Platform.OS },
+        { headers: { Authorization: `Bearer ${authToken}` }, timeout: 15000 }
+      );
+    } catch (err) {
+      console.error('Push registration failed', err?.message || err);
+    }
+  };
+
+  useEffect(() => {
+    registerForPushNotifications();
+  }, []);
 
   const PROMO_DATA = [
     {

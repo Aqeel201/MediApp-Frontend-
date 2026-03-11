@@ -77,7 +77,7 @@ class ScreenErrorBoundary extends React.Component {
   }
 }
 
-const MediAppAI = () => {
+const MediAppAIInner = () => {
   const { width, height } = useWindowDimensions();
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
@@ -442,7 +442,6 @@ const MediAppAI = () => {
   );
 
   return (
-    <ScreenErrorBoundary>
       <View style={styles.container}>
         <LinearGradient colors={['#0ea5e9', '#1d4ed8']} style={styles.header}>
           <View style={styles.headerRow}>
@@ -575,9 +574,14 @@ const MediAppAI = () => {
           </View>
         </Modal>
       </View>
-    </ScreenErrorBoundary>
   );
 };
+
+const MediAppAI = () => (
+  <ScreenErrorBoundary>
+    <MediAppAIInner />
+  </ScreenErrorBoundary>
+);
 
 const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVisible = false) =>
   StyleSheet.create({

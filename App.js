@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
+import * as Notifications from 'expo-notifications';
 
 // Import your screens
 import LoginScreen from './Screen/LoginScreen';
@@ -68,6 +69,14 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 const Stack = createStackNavigator();
 
 import PremiumSplash from './Screen/PremiumSplash';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState(null);
