@@ -33,6 +33,18 @@ const GROQ_DIRECT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
 const GROQ_MODEL = process.env.EXPO_PUBLIC_GROQ_MODEL || 'llama-3.1-8b-instant';
 
+const CHAT_FONT = Platform.select({
+  ios: 'AvenirNext-Regular',
+  android: 'Roboto',
+  default: 'System',
+});
+
+const CHAT_FONT_BOLD = Platform.select({
+  ios: 'AvenirNext-DemiBold',
+  android: 'Roboto-Medium',
+  default: 'System',
+});
+
 const WELCOME_MESSAGE =
   "Assalam-o-Alaikum! I'm MediApp AI. I can only answer medical and health-related questions. " +
   "For emergencies, contact a doctor or local emergency services immediately.";
@@ -293,6 +305,49 @@ const MediAppAI = () => {
     );
   };
 
+  const escapeRegExp = (str) => String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  const renderMessageText = (item) => {
+    if (!item?.content) return null;
+    if (item.role !== 'assistant' || !Array.isArray(item.suggestions) || !item.suggestions.length) {
+      return (
+        <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : styles.assistantText]}>
+          {item.content}
+        </Text>
+      );
+    }
+
+    const suggestionMap = new Map(
+      item.suggestions
+        .map((m) => [String(m.name || '').toLowerCase(), m])
+        .filter(([k]) => k)
+    );
+    const names = Array.from(suggestionMap.keys()).sort((a, b) => b.length - a.length);
+    const regex = new RegExp(`(${names.map(escapeRegExp).join('|')})`, 'gi');
+    const parts = String(item.content).split(regex).filter((p) => p !== '');
+
+    return (
+      <Text style={[styles.bubbleText, styles.assistantText]}>
+        {parts.map((part, idx) => {
+          const key = part.toLowerCase();
+          const med = suggestionMap.get(key);
+          if (!med) {
+            return <Text key={`${part}_${idx}`}>{part}</Text>;
+          }
+          return (
+            <Text
+              key={`${part}_${idx}`}
+              style={styles.medicineLink}
+              onPress={() => navigation.navigate('MedicineDetail', { medicine: med })}
+            >
+              {part}
+            </Text>
+          );
+        })}
+      </Text>
+    );
+  };
+
   const openActions = (item, index) => {
     setActionMessage({ ...item, index });
     setShowActions(true);
@@ -361,9 +416,7 @@ const MediAppAI = () => {
               onLongPress={() => openActions(item, index)}
               style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.assistantBubble]}
             >
-              <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : styles.assistantText]}>
-                {item.content}
-              </Text>
+              {renderMessageText(item)}
               {item.role === 'assistant' ? renderSuggestions(item.suggestions) : null}
             </TouchableOpacity>
           )}
@@ -474,6 +527,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#fff',
       fontSize: fontSize(20),
       fontWeight: '800',
+      fontFamily: CHAT_FONT_BOLD,
       flex: 1,
       marginLeft: 10,
     },
@@ -494,11 +548,13 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#fff',
       fontSize: fontSize(12),
       fontWeight: '700',
+      fontFamily: CHAT_FONT_BOLD,
     },
     headerSubtitle: {
       color: 'rgba(255,255,255,0.9)',
       marginTop: 8,
       fontSize: fontSize(12),
+      fontFamily: CHAT_FONT,
     },
     headerBadge: {
       marginTop: 12,
@@ -515,6 +571,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#0ea5e9',
       fontWeight: '700',
       fontSize: fontSize(12),
+      fontFamily: CHAT_FONT_BOLD,
     },
     body: {
       flex: 1,
@@ -542,13 +599,21 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
     bubbleText: {
       fontSize: fontSize(14),
       lineHeight: 20,
+      fontFamily: CHAT_FONT,
     },
     userText: {
       color: '#fff',
       fontWeight: '600',
+      fontFamily: CHAT_FONT_BOLD,
     },
     assistantText: {
       color: isDarkMode ? '#e5e7eb' : '#111827',
+    },
+    medicineLink: {
+      color: '#2563eb',
+      fontWeight: '700',
+      textDecorationLine: 'underline',
+      fontFamily: CHAT_FONT_BOLD,
     },
     suggestionRow: {
       flexDirection: 'row',
@@ -566,6 +631,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#fff',
       fontSize: fontSize(12),
       fontWeight: '700',
+      fontFamily: CHAT_FONT_BOLD,
     },
     inputRow: {
       flexDirection: 'row',
@@ -586,6 +652,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       maxHeight: hp(16),
       borderWidth: 1,
       borderColor: isDarkMode ? '#1f2937' : '#e5e7eb',
+      fontFamily: CHAT_FONT,
     },
     sendBtn: {
       backgroundColor: '#0ea5e9',
@@ -615,6 +682,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       fontSize: fontSize(16),
       fontWeight: '800',
       color: isDarkMode ? '#fff' : '#111827',
+      fontFamily: CHAT_FONT_BOLD,
       marginBottom: hp(1.5),
     },
     actionRow: {
@@ -631,6 +699,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
     actionBtnText: {
       color: '#fff',
       fontWeight: '700',
+      fontFamily: CHAT_FONT_BOLD,
     },
     actionCancelBtn: {
       marginTop: hp(1.5),
@@ -641,6 +710,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
     actionCancelText: {
       color: isDarkMode ? '#cbd5f5' : '#475569',
       fontWeight: '700',
+      fontFamily: CHAT_FONT_BOLD,
     },
     historyOverlay: {
       flex: 1,
@@ -658,6 +728,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       fontSize: fontSize(18),
       fontWeight: '800',
       color: isDarkMode ? '#fff' : '#111827',
+      fontFamily: CHAT_FONT_BOLD,
       marginBottom: hp(1.5),
     },
     historyHeaderRow: {
@@ -678,6 +749,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       color: '#fff',
       fontSize: fontSize(12),
       fontWeight: '700',
+      fontFamily: CHAT_FONT_BOLD,
     },
     historyItemRow: {
       flexDirection: 'row',
@@ -701,21 +773,25 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       fontSize: fontSize(14),
       fontWeight: '700',
       color: isDarkMode ? '#fff' : '#111827',
+      fontFamily: CHAT_FONT_BOLD,
     },
     historyItemSub: {
       fontSize: fontSize(12),
       color: isDarkMode ? '#cbd5f5' : '#6b7280',
       marginTop: 4,
+      fontFamily: CHAT_FONT,
     },
     historyItemDate: {
       fontSize: fontSize(11),
       color: isDarkMode ? '#94a3b8' : '#9ca3af',
       marginTop: 4,
+      fontFamily: CHAT_FONT,
     },
     historyEmpty: {
       textAlign: 'center',
       color: isDarkMode ? '#cbd5f5' : '#6b7280',
       marginVertical: hp(2),
+      fontFamily: CHAT_FONT,
     },
     historyCloseBtn: {
       marginTop: hp(2),
@@ -728,6 +804,7 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
     historyCloseText: {
       color: '#fff',
       fontWeight: '700',
+      fontFamily: CHAT_FONT_BOLD,
     },
   });
 
