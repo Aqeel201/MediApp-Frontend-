@@ -177,7 +177,8 @@ const MediAppAIInner = () => {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const session = res.data;
-      const mapped = (session?.messages || []).map((m, idx) => ({
+      const sliced = (session?.messages || []).slice(-200);
+      const mapped = sliced.map((m, idx) => ({
         id: `${m.role}_${idx}_${sessionId}`,
         role: m.role,
         content: m.content,
@@ -358,6 +359,13 @@ const MediAppAIInner = () => {
   const renderMessageText = (item) => {
     try {
       if (!item?.content) return null;
+      if (String(item.content).length > 2000) {
+        return (
+          <Text style={[styles.bubbleText, item?.role === 'user' ? styles.userText : styles.assistantText]}>
+            {item.content}
+          </Text>
+        );
+      }
       if (item.role !== 'assistant' || !Array.isArray(item.suggestions) || !item.suggestions.length) {
         return (
           <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : styles.assistantText]}>
