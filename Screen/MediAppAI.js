@@ -17,6 +17,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -54,7 +55,10 @@ const MediAppAI = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [showActions, setShowActions] = useState(false);
+  const [actionMessage, setActionMessage] = useState(null);
   const listRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     const loadAuth = async () => {
@@ -289,6 +293,25 @@ const MediAppAI = () => {
     );
   };
 
+  const openActions = (item, index) => {
+    setActionMessage({ ...item, index });
+    setShowActions(true);
+  };
+
+  const handleCopy = async () => {
+    if (!actionMessage?.content) return;
+    await Clipboard.setStringAsync(actionMessage.content);
+    setShowActions(false);
+    Alert.alert('Copied', 'Message copied to clipboard.');
+  };
+
+  const handleEdit = () => {
+    if (!actionMessage?.content) return;
+    setInput(actionMessage.content);
+    setShowActions(false);
+    setTimeout(() => inputRef.current?.focus?.(), 50);
+  };
+
   const styles = useMemo(
     () => getStyles(isDarkMode, width, height, insets, keyboardVisible),
     [isDarkMode, width, height, insets, keyboardVisible]
@@ -332,18 +355,23 @@ const MediAppAI = () => {
           contentContainerStyle={styles.list}
           keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          renderItem={({ item }) => (
-            <View style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.assistantBubble]}>
+          renderItem={({ item, index }) => (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onLongPress={() => openActions(item, index)}
+              style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.assistantBubble]}
+            >
               <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : styles.assistantText]}>
                 {item.content}
               </Text>
               {item.role === 'assistant' ? renderSuggestions(item.suggestions) : null}
-            </View>
+            </TouchableOpacity>
           )}
         />
 
         <View style={styles.inputRow}>
           <TextInput
+            ref={inputRef}
             value={input}
             onChangeText={setInput}
             placeholder="Ask a medical question..."
@@ -360,6 +388,27 @@ const MediAppAI = () => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}>
+        <View style={styles.actionOverlay}>
+          <View style={styles.actionSheet}>
+            <Text style={styles.actionTitle}>Message options</Text>
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.actionBtn} onPress={handleCopy}>
+                <Text style={styles.actionBtnText}>Copy</Text>
+              </TouchableOpacity>
+              {actionMessage?.role === 'user' ? (
+                <TouchableOpacity style={styles.actionBtn} onPress={handleEdit}>
+                  <Text style={styles.actionBtnText}>Edit</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+            <TouchableOpacity style={styles.actionCancelBtn} onPress={() => setShowActions(false)}>
+              <Text style={styles.actionCancelText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={showHistory} transparent animationType="slide" onRequestClose={() => setShowHistory(false)}>
         <View style={styles.historyOverlay}>
@@ -545,6 +594,53 @@ const getStyles = (isDarkMode, width, height, insets = { bottom: 0 }, keyboardVi
       borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    actionOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: wp(6),
+    },
+    actionSheet: {
+      width: '100%',
+      maxWidth: 360,
+      backgroundColor: isDarkMode ? '#0f172a' : '#fff',
+      borderRadius: 18,
+      padding: wp(5),
+      borderWidth: 1,
+      borderColor: isDarkMode ? '#1f2937' : '#e5e7eb',
+    },
+    actionTitle: {
+      fontSize: fontSize(16),
+      fontWeight: '800',
+      color: isDarkMode ? '#fff' : '#111827',
+      marginBottom: hp(1.5),
+    },
+    actionRow: {
+      flexDirection: 'row',
+      gap: 10,
+    },
+    actionBtn: {
+      flex: 1,
+      backgroundColor: '#0ea5e9',
+      paddingVertical: 10,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    actionBtnText: {
+      color: '#fff',
+      fontWeight: '700',
+    },
+    actionCancelBtn: {
+      marginTop: hp(1.5),
+      alignSelf: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+    },
+    actionCancelText: {
+      color: isDarkMode ? '#cbd5f5' : '#475569',
+      fontWeight: '700',
     },
     historyOverlay: {
       flex: 1,
