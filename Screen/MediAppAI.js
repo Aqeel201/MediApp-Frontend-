@@ -48,6 +48,35 @@ const WELCOME_MESSAGE =
   "Assalam-o-Alaikum! I'm MediApp AI. I can only answer medical and health-related questions. " +
   "For emergencies, contact a doctor or local emergency services immediately.";
 
+class ScreenErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(err) {
+    console.error('MediAppAI crash:', err);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 8 }}>MediApp AI</Text>
+          <Text style={{ textAlign: 'center', color: '#64748b' }}>
+            This screen ran into a problem. Please close and reopen the app.
+          </Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const MediAppAI = () => {
   const { width, height } = useWindowDimensions();
   const navigation = useNavigation();
@@ -76,7 +105,14 @@ const MediAppAI = () => {
     const loadAuth = async () => {
       const token = await AsyncStorage.getItem('authToken');
       const userStr = await AsyncStorage.getItem('user');
-      const user = userStr ? JSON.parse(userStr) : null;
+      let user = null;
+      if (userStr) {
+        try {
+          user = JSON.parse(userStr);
+        } catch (err) {
+          console.error('Failed to parse user storage:', err);
+        }
+      }
       const id = user?.id || user?.email || '';
       setAuthToken(token || '');
       setUserId(id);
@@ -406,138 +442,140 @@ const MediAppAI = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#0ea5e9', '#1d4ed8']} style={styles.header}>
-        <View style={styles.headerRow}>
-          <FontAwesomeIcon icon={faStethoscope} size={22} color="#fff" />
-          <Text style={styles.headerTitle}>MediApp AI</Text>
-          <View style={styles.headerActions}>
-            <TouchableOpacity onPress={openHistory} style={styles.headerActionBtn}>
-              <FontAwesomeIcon icon={faHistory} size={16} color="#fff" />
-              <Text style={styles.headerActionText}>History</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={startNewChat} style={styles.headerActionBtn}>
-              <FontAwesomeIcon icon={faPlus} size={16} color="#fff" />
-              <Text style={styles.headerActionText}>New</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <Text style={styles.headerSubtitle}>
-          Medical-only assistant. Store medicines are suggested first when relevant.
-        </Text>
-        <View style={styles.headerBadge}>
-          <FontAwesomeIcon icon={faShieldAlt} size={12} color="#0ea5e9" />
-          <Text style={styles.headerBadgeText}>Safety-first guidance</Text>
-        </View>
-      </LinearGradient>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom : 0}
-        style={styles.body}
-      >
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          keyboardShouldPersistTaps="handled"
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          renderItem={({ item, index }) => (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onLongPress={() => openActions(item, index)}
-              style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.assistantBubble]}
-            >
-              {renderMessageText(item)}
-              {item.role === 'assistant' ? renderSuggestions(item.suggestions) : null}
-            </TouchableOpacity>
-          )}
-        />
-
-        <View style={styles.inputRow}>
-          <TextInput
-            ref={inputRef}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Ask a medical question..."
-            placeholderTextColor={isDarkMode ? '#9ca3af' : '#6b7280'}
-            style={styles.input}
-            multiline
-          />
-          <TouchableOpacity onPress={sendMessage} style={styles.sendBtn} disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <FontAwesomeIcon icon={faPaperPlane} size={16} color="#fff" />
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-
-      <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}>
-        <View style={styles.actionOverlay}>
-          <View style={styles.actionSheet}>
-            <Text style={styles.actionTitle}>Message options</Text>
-            <View style={styles.actionRow}>
-              {clipboardAvailable ? (
-                <TouchableOpacity style={styles.actionBtn} onPress={handleCopy}>
-                  <Text style={styles.actionBtnText}>Copy</Text>
-                </TouchableOpacity>
-              ) : null}
-              {actionMessage?.role === 'user' ? (
-                <TouchableOpacity style={styles.actionBtn} onPress={handleEdit}>
-                  <Text style={styles.actionBtnText}>Edit</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-            <TouchableOpacity style={styles.actionCancelBtn} onPress={() => setShowActions(false)}>
-              <Text style={styles.actionCancelText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={showHistory} transparent animationType="slide" onRequestClose={() => setShowHistory(false)}>
-        <View style={styles.historyOverlay}>
-          <View style={styles.historyModal}>
-            <View style={styles.historyHeaderRow}>
-              <Text style={styles.historyTitle}>Recent Chats</Text>
-              <TouchableOpacity onPress={deleteAllChats} style={styles.historyClearBtn}>
-                <FontAwesomeIcon icon={faTrash} size={14} color="#fff" />
-                <Text style={styles.historyClearText}>Clear</Text>
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <LinearGradient colors={['#0ea5e9', '#1d4ed8']} style={styles.header}>
+          <View style={styles.headerRow}>
+            <FontAwesomeIcon icon={faStethoscope} size={22} color="#fff" />
+            <Text style={styles.headerTitle}>MediApp AI</Text>
+            <View style={styles.headerActions}>
+              <TouchableOpacity onPress={openHistory} style={styles.headerActionBtn}>
+                <FontAwesomeIcon icon={faHistory} size={16} color="#fff" />
+                <Text style={styles.headerActionText}>History</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={startNewChat} style={styles.headerActionBtn}>
+                <FontAwesomeIcon icon={faPlus} size={16} color="#fff" />
+                <Text style={styles.headerActionText}>New</Text>
               </TouchableOpacity>
             </View>
-            {loadingHistory ? (
-              <ActivityIndicator />
-            ) : (
-              <FlatList
-                data={sessions}
-                keyExtractor={(item) => item._id}
-                renderItem={({ item }) => (
-                  <View style={styles.historyItemRow}>
-                    <TouchableOpacity style={styles.historyItem} onPress={() => loadChat(item._id)}>
-                      <Text style={styles.historyItemTitle}>{item.title || 'Chat'}</Text>
-                      <Text style={styles.historyItemSub} numberOfLines={1}>{item.lastMessage || ''}</Text>
-                      <Text style={styles.historyItemDate}>
-                        {item.updatedAt ? new Date(item.updatedAt).toLocaleString() : ''}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => deleteChat(item._id)} style={styles.historyDeleteBtn}>
-                      <FontAwesomeIcon icon={faTrash} size={14} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-                ListEmptyComponent={<Text style={styles.historyEmpty}>No chats yet.</Text>}
-              />
+          </View>
+          <Text style={styles.headerSubtitle}>
+            Medical-only assistant. Store medicines are suggested first when relevant.
+          </Text>
+          <View style={styles.headerBadge}>
+            <FontAwesomeIcon icon={faShieldAlt} size={12} color="#0ea5e9" />
+            <Text style={styles.headerBadgeText}>Safety-first guidance</Text>
+          </View>
+        </LinearGradient>
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom : 0}
+          style={styles.body}
+        >
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+            renderItem={({ item, index }) => (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onLongPress={() => openActions(item, index)}
+                style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.assistantBubble]}
+              >
+                {renderMessageText(item)}
+                {item.role === 'assistant' ? renderSuggestions(item.suggestions) : null}
+              </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={() => setShowHistory(false)} style={styles.historyCloseBtn}>
-              <Text style={styles.historyCloseText}>Close</Text>
+          />
+
+          <View style={styles.inputRow}>
+            <TextInput
+              ref={inputRef}
+              value={input}
+              onChangeText={setInput}
+              placeholder="Ask a medical question..."
+              placeholderTextColor={isDarkMode ? '#9ca3af' : '#6b7280'}
+              style={styles.input}
+              multiline
+            />
+            <TouchableOpacity onPress={sendMessage} style={styles.sendBtn} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <FontAwesomeIcon icon={faPaperPlane} size={16} color="#fff" />
+              )}
             </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </KeyboardAvoidingView>
+
+        <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}>
+          <View style={styles.actionOverlay}>
+            <View style={styles.actionSheet}>
+              <Text style={styles.actionTitle}>Message options</Text>
+              <View style={styles.actionRow}>
+                {clipboardAvailable ? (
+                  <TouchableOpacity style={styles.actionBtn} onPress={handleCopy}>
+                    <Text style={styles.actionBtnText}>Copy</Text>
+                  </TouchableOpacity>
+                ) : null}
+                {actionMessage?.role === 'user' ? (
+                  <TouchableOpacity style={styles.actionBtn} onPress={handleEdit}>
+                    <Text style={styles.actionBtnText}>Edit</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              <TouchableOpacity style={styles.actionCancelBtn} onPress={() => setShowActions(false)}>
+                <Text style={styles.actionCancelText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showHistory} transparent animationType="slide" onRequestClose={() => setShowHistory(false)}>
+          <View style={styles.historyOverlay}>
+            <View style={styles.historyModal}>
+              <View style={styles.historyHeaderRow}>
+                <Text style={styles.historyTitle}>Recent Chats</Text>
+                <TouchableOpacity onPress={deleteAllChats} style={styles.historyClearBtn}>
+                  <FontAwesomeIcon icon={faTrash} size={14} color="#fff" />
+                  <Text style={styles.historyClearText}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+              {loadingHistory ? (
+                <ActivityIndicator />
+              ) : (
+                <FlatList
+                  data={sessions}
+                  keyExtractor={(item) => item._id}
+                  renderItem={({ item }) => (
+                    <View style={styles.historyItemRow}>
+                      <TouchableOpacity style={styles.historyItem} onPress={() => loadChat(item._id)}>
+                        <Text style={styles.historyItemTitle}>{item.title || 'Chat'}</Text>
+                        <Text style={styles.historyItemSub} numberOfLines={1}>{item.lastMessage || ''}</Text>
+                        <Text style={styles.historyItemDate}>
+                          {item.updatedAt ? new Date(item.updatedAt).toLocaleString() : ''}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => deleteChat(item._id)} style={styles.historyDeleteBtn}>
+                        <FontAwesomeIcon icon={faTrash} size={14} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  ListEmptyComponent={<Text style={styles.historyEmpty}>No chats yet.</Text>}
+                />
+              )}
+              <TouchableOpacity onPress={() => setShowHistory(false)} style={styles.historyCloseBtn}>
+                <Text style={styles.historyCloseText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </ScreenErrorBoundary>
   );
 };
 
