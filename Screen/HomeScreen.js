@@ -90,6 +90,7 @@ const HomeScreen = () => {
   const [showPromo, setShowPromo] = useState(false);
   const [currentPromo, setCurrentPromo] = useState(null);
   const promoScaleAnim = useRef(new Animated.Value(0)).current;
+  const notificationPollRef = useRef(null);
 
   const registerForPushNotifications = async () => {
     try {
@@ -134,6 +135,60 @@ const HomeScreen = () => {
 
   useEffect(() => {
     registerForPushNotifications();
+  }, []);
+
+  const pollNotifications = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem('authToken');
+      if (!authToken) return;
+      const resp = await axios.get(`${API_BASE}/api/notifications`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+        timeout: 15000,
+      });
+      const list = Array.isArray(resp.data) ? resp.data : [];
+      if (!list.length) return;
+
+      const lastSeenRaw = await AsyncStorage.getItem('lastNotifiedAt');
+      const newest = list[0]?.date ? new Date(list[0].date).getTime() : 0;
+      if (!lastSeenRaw) {
+        if (newest) await AsyncStorage.setItem('lastNotifiedAt', new Date(newest).toISOString());
+        return;
+      }
+      const lastSeen = new Date(lastSeenRaw).getTime();
+      if (!Number.isFinite(lastSeen)) return;
+
+      const fresh = list.filter((n) => {
+        const t = n?.date ? new Date(n.date).getTime() : 0;
+        return t > lastSeen;
+      });
+      if (fresh.length) {
+        const latestTime = Math.max(...fresh.map((n) => new Date(n.date).getTime()).filter(Boolean));
+        if (latestTime) {
+          await AsyncStorage.setItem('lastNotifiedAt', new Date(latestTime).toISOString());
+        }
+        // fire local notifications (foreground/background while app is alive)
+        for (const n of fresh.slice(0, 3)) {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: n.title || 'MediApp',
+              body: n.message || '',
+              sound: 'default',
+            },
+            trigger: null,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Notification poll failed', err?.message || err);
+    }
+  };
+
+  useEffect(() => {
+    pollNotifications();
+    notificationPollRef.current = setInterval(pollNotifications, 60000);
+    return () => {
+      if (notificationPollRef.current) clearInterval(notificationPollRef.current);
+    };
   }, []);
 
   const PROMO_DATA = [
