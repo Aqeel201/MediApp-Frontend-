@@ -13,6 +13,27 @@ import { Fingerprint, Bell, Moon, Sun, Languages, User, Lock, MapPin, Trash2, Ar
 import * as Updates from 'expo-updates';
 import PremiumModal from './PremiumModal';
 
+const CHANGELOG = [
+  {
+    version: '1.0.0',
+    date: 'March 11, 2026',
+    items: [
+      'MediApp AI memory improved with summaries and key facts.',
+      'Clickable medicine names inside AI responses.',
+      'Cleaner AI typography and message actions (copy/edit).',
+      'AI suggestions avoid repeating the same medicines.',
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: 'March 10, 2026',
+    items: [
+      'Inline checkout map and location search improvements.',
+      'AI stability fixes and better keyboard behavior.',
+    ],
+  },
+];
+
 
 const SettingsScreen = () => {
   const { isDarkMode, setIsDarkMode } = useTheme();
@@ -184,6 +205,31 @@ const SettingsScreen = () => {
               <Text style={{ color: '#0d6efd', fontWeight: 'bold' }}>Check for Updates</Text>
             </TouchableOpacity>
           )}
+        </View>
+
+        {/* Change Log Section */}
+        <View style={[styles.section, { borderBottomWidth: 1, borderBottomColor: isDarkMode ? '#333' : '#eee', paddingBottom: 15, marginBottom: 15 }]}>
+          <Text style={[styles.sectionTitle, { color: isDarkMode ? '#aaa' : '#666', fontSize: 12, marginBottom: 10, fontWeight: 'bold' }]}>CHANGE LOG</Text>
+          {CHANGELOG.map((entry, idx) => (
+            <View key={`${entry.version}_${idx}`} style={{ marginBottom: 12 }}>
+              <Text style={[styles.text, { color: isDarkMode ? 'white' : '#333', fontWeight: 'bold' }]}>
+                Version {entry.version}
+              </Text>
+              <Text style={{ color: isDarkMode ? '#888' : '#666', fontSize: 12, marginTop: 2 }}>
+                {entry.date}
+              </Text>
+              <View style={{ marginTop: 6 }}>
+                {entry.items.map((item, i) => (
+                  <Text
+                    key={`${entry.version}_${i}`}
+                    style={{ color: isDarkMode ? '#cbd5f5' : '#475569', fontSize: 12, marginBottom: 4 }}
+                  >
+                    • {item}
+                  </Text>
+                ))}
+              </View>
+            </View>
+          ))}
         </View>
 
         <View style={styles.item}>
