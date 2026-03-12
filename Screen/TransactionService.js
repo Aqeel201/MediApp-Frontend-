@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import * as Notifications from "expo-notifications";
 import { Alert } from "react-native";
 
 // Singleton class for managing transaction polling and timers
@@ -95,27 +94,11 @@ class TransactionService {
       clearInterval(entry.timer.interval);
       this.pendingTransactions.delete(transactionId);
 
-      // Trigger notification
       const title = updatedTxn.status === "Accepted" ? "Transaction Accepted" : "Transaction Rejected";
       const message = updatedTxn.status === "Accepted"
         ? `Your transaction #${transactionId.slice(-6).toUpperCase()} for Rs. ${updatedTxn.depositAmount} has been accepted.`
         : `Your transaction #${transactionId.slice(-6).toUpperCase()} was rejected due to invalid details.`;
 
-      try {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title,
-            body: message,
-            sound: "default",
-            priority: Notifications.AndroidNotificationPriority.HIGH,
-          },
-          trigger: null,
-        });
-      } catch (error) {
-        console.error("TransactionService: Failed to schedule notification:", error);
-      }
-
-      // Show pop-up alert
       Alert.alert(title, message);
     }
   }

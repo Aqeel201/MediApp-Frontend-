@@ -10,7 +10,6 @@ import axios from 'axios';
 import { Image as ImageIcon, Mic, Paperclip, Camera, ArrowLeft } from 'lucide-react-native';
 import { useTheme } from './ThemeContext';
 import * as ImagePicker from 'expo-image-picker';
-import * as Notifications from 'expo-notifications';
 import { wp, hp, fontSize } from './responsive';
 
 const VERCEL_URL = 'https://dashboard-backend-xrss.vercel.app';
@@ -22,27 +21,6 @@ const Chat = ({ navigation }) => {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode, insets);
 
-  // Notification Handler Setup
-  useEffect(() => {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
-    });
-  }, []);
-
-  const sendLocalNotification = async (title, body) => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        sound: true,
-      },
-      trigger: null,
-    });
-  };
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
   const [userId, setUserId] = useState(null);
@@ -230,15 +208,6 @@ const Chat = ({ navigation }) => {
                 const newMsgs = formatted.filter(m => !prev.some(p => p._id === m._id));
                 if (newMsgs.length > 0) {
                   const newestAdminMsg = newMsgs.find(m => m.user._id === 2);
-                  if (newestAdminMsg) {
-                    let notifBody = newestAdminMsg.text || "Sent a media file";
-                    if (newestAdminMsg.image) notifBody = "Sent a photo";
-                    if (newestAdminMsg.file) {
-                      if (notifBody.includes("[VOICE]")) notifBody = "Sent a voice message";
-                      else if (notifBody.includes("[DOCUMENT]")) notifBody = "Sent a document";
-                    }
-                    sendLocalNotification("New message from Admin", notifBody);
-                  }
                   return GiftedChat.append(prev, newMsgs.reverse());
                 }
                 return prev;

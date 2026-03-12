@@ -78,8 +78,8 @@ const API_BASE = 'https://dashboard-backend-xrss.vercel.app';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
+    shouldShowAlert: AppState.currentState !== 'active',
+    shouldPlaySound: AppState.currentState !== 'active',
     shouldSetBadge: false,
   }),
 });
@@ -88,6 +88,7 @@ const NotificationManager = () => {
   const pollRef = useRef(null);
   const registerRef = useRef(null);
   const registeredRef = useRef(false);
+  const pushEnabledRef = useRef(false);
   const lastActiveRef = useRef(AppState.currentState);
 
   const registerForPushNotifications = async () => {
@@ -128,6 +129,7 @@ const NotificationManager = () => {
         { headers: { Authorization: `Bearer ${authToken}` }, timeout: 15000 }
       );
       registeredRef.current = true;
+      pushEnabledRef.current = true;
     } catch (err) {
       console.error('Push registration failed', err?.message || err);
     }
@@ -165,7 +167,7 @@ const NotificationManager = () => {
         await AsyncStorage.setItem('lastNotifiedAt', new Date(latestTime).toISOString());
       }
 
-      if (appState === 'active') {
+      if (appState === 'active' || pushEnabledRef.current) {
         return;
       }
 

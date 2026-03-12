@@ -93,6 +93,15 @@ const SettingsScreen = () => {
 
   const handleCheckUpdate = async () => {
     try {
+      if (!Updates.isEnabled) {
+        setModal({
+          visible: true,
+          title: "Updates Disabled",
+          message: "This build has OTA updates disabled. Please install the latest APK to update.",
+          type: 'info'
+        });
+        return;
+      }
       const update = await Updates.checkForUpdateAsync();
       if (update.isAvailable) {
         await Updates.fetchUpdateAsync();
@@ -105,7 +114,24 @@ const SettingsScreen = () => {
         });
       }
     } catch (e) {
-      const errMsg = e?.message ? `Reason: ${e.message}` : '';
+      const safeDetails = (() => {
+        if (!e) return '';
+        if (typeof e === 'string') return e;
+        const parts = [];
+        if (e.message) parts.push(e.message);
+        if (e.code) parts.push(`code: ${e.code}`);
+        if (e.details) parts.push(`details: ${e.details}`);
+        if (e.cause?.message) parts.push(`cause: ${e.cause.message}`);
+        if (!parts.length) {
+          try {
+            return JSON.stringify(e, Object.getOwnPropertyNames(e));
+          } catch {
+            return 'Unknown error';
+          }
+        }
+        return parts.join(' | ');
+      })();
+      const errMsg = safeDetails ? `Reason: ${safeDetails}` : '';
       setModal({
         visible: true,
         title: "Update Failed",
