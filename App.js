@@ -86,18 +86,27 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const resolveNotificationRoute = (data = {}) => {
+const resolveNotificationRoute = (data = {}, content = {}) => {
   const type = String(data?.type || '').toLowerCase();
   if (type === 'chat') return { name: 'Chat' };
   if (type === 'order') return { name: 'OrderHistory', params: { highlightOrderId: data?.orderId || null } };
   if (type === 'transaction') return { name: 'TransactionHistory', params: { highlightOrderId: data?.orderId || null } };
   if (type === 'reminder') return { name: 'MedicineReminder' };
   if (type === 'broadcast') return { name: 'NotificationPage' };
+  const title = String(content?.title || '').toLowerCase();
+  const body = String(content?.body || '').toLowerCase();
+  if (title.includes('message') || body.includes('message')) return { name: 'Chat' };
+  if (title.includes('order') || body.includes('order')) return { name: 'OrderHistory' };
+  if (title.includes('payment') || title.includes('transaction') || body.includes('payment') || body.includes('transaction')) {
+    return { name: 'TransactionHistory' };
+  }
+  if (title.includes('reminder') || body.includes('reminder')) return { name: 'MedicineReminder' };
+  if (title || body) return { name: 'NotificationPage' };
   return null;
 };
 
-const navigateFromNotification = async (data) => {
-  const route = resolveNotificationRoute(data);
+const navigateFromNotification = async (data, content) => {
+  const route = resolveNotificationRoute(data, content);
   if (!route) return;
   if (navigationRef.isReady()) {
     navigationRef.navigate(route.name, route.params);
@@ -251,7 +260,8 @@ const NotificationManager = () => {
         if (handledId === lastId) return;
         await AsyncStorage.setItem('lastHandledNotificationId', lastId);
         const data = lastResponse?.notification?.request?.content?.data || {};
-        await navigateFromNotification(data);
+        const content = lastResponse?.notification?.request?.content || {};
+        await navigateFromNotification(data, content);
       } catch (err) {
         // no-op
       }
@@ -277,7 +287,8 @@ const NotificationManager = () => {
         // no-op
       }
       const data = response?.notification?.request?.content?.data || {};
-      await navigateFromNotification(data);
+      const content = response?.notification?.request?.content || {};
+      await navigateFromNotification(data, content);
     });
     return () => {
       receivedSub?.remove?.();
