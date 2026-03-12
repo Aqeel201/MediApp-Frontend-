@@ -11,6 +11,7 @@ import Button from './Button'; // Import the Button component
 import { wp, hp, fontSize } from './responsive';
 import { Fingerprint, Bell, Moon, Sun, Languages, User, Lock, MapPin, Trash2, ArrowLeft, CheckCircle, Info, LogOut } from 'lucide-react-native';
 import * as Updates from 'expo-updates';
+import * as LocalAuthentication from 'expo-local-authentication';
 import PremiumModal from './PremiumModal';
 import axios from 'axios';
 
@@ -298,6 +299,17 @@ const SettingsScreen = () => {
             size="medium"
             onToggle={async (isOn) => {
               try {
+                if (isOn) {
+                  const hasHardware = await LocalAuthentication.hasHardwareAsync();
+                  const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+                  if (!hasHardware || !isEnrolled) {
+                    setIsBiometricsEnabled(false);
+                    await AsyncStorage.setItem('isBiometricsEnabled', 'false');
+                    Alert.alert('Biometrics Unavailable', 'No biometric data found. Please enroll fingerprint/face in device settings first.');
+                    return;
+                  }
+                }
+
                 setIsBiometricsEnabled(isOn);
                 await AsyncStorage.setItem('isBiometricsEnabled', isOn.toString());
 

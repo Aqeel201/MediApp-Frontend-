@@ -156,8 +156,8 @@ const OrderHistoryScreen = ({ navigation }) => {
                     <Text style={styles.statusText}>{item.status}</Text>
                   </View>
                   {item.paymentMethod === 'EasyPaisa' && (
-                    <View style={[styles.paymentStatusBadge, { backgroundColor: item.paymentStatus === 'paid' ? '#22c55e' : '#f59e0b' }]}>
-                      <Text style={styles.paymentStatusText}>{item.paymentStatus === 'paid' ? 'Paid' : 'Pending'}</Text>
+                    <View style={[styles.paymentStatusBadge, { backgroundColor: item.paymentStatus === 'paid' ? '#22c55e' : '#ef4444' }]}>
+                      <Text style={styles.paymentStatusText}>{item.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</Text>
                     </View>
                   )}
                 </View>
