@@ -124,6 +124,7 @@ const NotificationManager = () => {
   const registerRef = useRef(null);
   const registeredRef = useRef(false);
   const pushEnabledRef = useRef(false);
+  const presenceRef = useRef(null);
   const lastActiveRef = useRef(AppState.currentState);
 
   const registerForPushNotifications = async () => {
@@ -225,6 +226,20 @@ const NotificationManager = () => {
     }
   };
 
+  const pingPresence = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem('authToken');
+      if (!authToken) return;
+      await axios.post(
+        `${API_BASE}/api/presence/ping`,
+        {},
+        { headers: { Authorization: `Bearer ${authToken}` }, timeout: 15000 }
+      );
+    } catch (err) {
+      // no-op
+    }
+  };
+
   useEffect(() => {
     registerForPushNotifications();
     registerRef.current = setInterval(() => {
@@ -241,12 +256,21 @@ const NotificationManager = () => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         pollNotifications();
+        pingPresence();
       }
       lastActiveRef.current = state;
     });
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       sub?.remove?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    pingPresence();
+    presenceRef.current = setInterval(pingPresence, 60000);
+    return () => {
+      if (presenceRef.current) clearInterval(presenceRef.current);
     };
   }, []);
 
