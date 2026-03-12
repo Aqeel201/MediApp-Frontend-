@@ -105,10 +105,11 @@ const SettingsScreen = () => {
         });
       }
     } catch (e) {
+      const errMsg = e?.message ? `Reason: ${e.message}` : '';
       setModal({
         visible: true,
         title: "Update Failed",
-        message: "Unable to check for updates. Please verify your connection.",
+        message: `Unable to check for updates. Please verify your connection. ${errMsg}`,
         type: 'error'
       });
     }
