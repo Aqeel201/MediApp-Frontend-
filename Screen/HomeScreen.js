@@ -220,7 +220,9 @@ const HomeScreen = () => {
     try {
       const response = await axios.get(`${API_BASE}/api/transactions?userId=${email}`);
       const transactions = response.data?.transactions || response.data || [];
-      const pending = transactions.filter(t => t.status === 'Pending');
+      const pending = transactions.filter(
+        (t) => t.status === 'Pending' && String(t.transactionID || '').startsWith('PENDING-')
+      );
       setPendingOrderCount(pending.length);
     } catch (e) {
       console.error("Error fetching pending transactions:", e.message);
