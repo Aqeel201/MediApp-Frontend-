@@ -183,10 +183,13 @@ const OrderHistoryScreen = ({ navigation }) => {
                     style={styles.completePaymentButton}
                     onPress={() => navigation.navigate('JazzCashPayment', {
                       orderData: {
+                        _id: item._id,
+                        userId: item.userId,
+                        shippingEmail: item.shippingEmail,
+                        paymentMethod: item.paymentMethod,
                         orderTotal: item.orderTotal,
                         cartItems: item.cartItems,
                         shippingFee: item.shippingFee,
-                        orderId: item._id
                       }
                     })}
                   >
@@ -262,10 +265,13 @@ const OrderHistoryScreen = ({ navigation }) => {
                           style={styles.pendingPayButton}
                           onPress={() => navigation.navigate('JazzCashPayment', {
                             orderData: {
+                              _id: order._id,
+                              userId: order.userId,
+                              shippingEmail: order.shippingEmail,
+                              paymentMethod: order.paymentMethod,
                               orderTotal: order.orderTotal,
                               cartItems: order.cartItems,
                               shippingFee: order.shippingFee,
-                              orderId: order._id
                             }
                           })}
                         >

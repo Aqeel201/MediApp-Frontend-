@@ -78,7 +78,7 @@ const DepositScreen = () => {
   const [submittedTransaction, setSubmittedTransaction] = useState(null);
   const [transactionTime, setTransactionTime] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [userId, setUserId] = useState("");
+  const [userId, setUserId] = useState(orderData?.userId || orderData?.shippingEmail || "");
   const [timeLeft, setTimeLeft] = useState("");
 
   // Fetch user data from AsyncStorage to get userId (using email as identifier)
@@ -145,6 +145,14 @@ const DepositScreen = () => {
       return;
     }
     try {
+      if (!userId) {
+        Alert.alert("Missing Info", "User email not found. Please login again.");
+        return;
+      }
+      if (!walletNumber || !walletName || !transactionID) {
+        Alert.alert("Missing Info", "Please fill wallet number, wallet name and transaction ID.");
+        return;
+      }
       // Ensure orderData includes an orderId for linking the transaction to an order.
       const response = await axios.post("https://dashboard-backend-xrss.vercel.app/api/transactions", {
         userId,
@@ -165,7 +173,8 @@ const DepositScreen = () => {
       setShowConfirmModal(false);
     } catch (error) {
       console.error("Error submitting transaction:", error);
-      Alert.alert("Error", "Error submitting transaction");
+      const message = error?.response?.data?.error || error?.message || "Error submitting transaction";
+      Alert.alert("Error", message);
     }
   };
 
