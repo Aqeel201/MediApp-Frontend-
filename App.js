@@ -76,6 +76,8 @@ import PremiumSplash from './Screen/PremiumSplash';
 
 const API_BASE = 'https://dashboard-backend-xrss.vercel.app';
 
+const PENDING_ROUTE_KEY = 'pendingNotificationRoute';
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: AppState.currentState !== 'active',
@@ -83,6 +85,30 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+const resolveNotificationRoute = (data = {}) => {
+  const type = String(data?.type || '').toLowerCase();
+  if (type === 'chat') return { name: 'Chat' };
+  if (type === 'order') return { name: 'OrderHistory', params: { highlightOrderId: data?.orderId || null } };
+  if (type === 'transaction') return { name: 'TransactionHistory', params: { highlightOrderId: data?.orderId || null } };
+  if (type === 'reminder') return { name: 'MedicineReminder' };
+  if (type === 'broadcast') return { name: 'NotificationPage' };
+  return null;
+};
+
+const navigateFromNotification = async (data) => {
+  const route = resolveNotificationRoute(data);
+  if (!route) return;
+  if (navigationRef.isReady()) {
+    navigationRef.navigate(route.name, route.params);
+  } else {
+    try {
+      await AsyncStorage.setItem(PENDING_ROUTE_KEY, JSON.stringify(route));
+    } catch {
+      // no-op
+    }
+  }
+};
 
 const NotificationManager = () => {
   const pollRef = useRef(null);
@@ -177,6 +203,10 @@ const NotificationManager = () => {
             title: n.title || 'MediApp',
             body: n.message || '',
             sound: 'default',
+            data: {
+              type: n.type || 'broadcast',
+              orderId: n.relatedId || null,
+            },
           },
           trigger: null,
         });
@@ -219,12 +249,14 @@ const NotificationManager = () => {
         // no-op
       }
     });
-    const responseSub = Notifications.addNotificationResponseReceivedListener(async () => {
+    const responseSub = Notifications.addNotificationResponseReceivedListener(async (response) => {
       try {
         await AsyncStorage.setItem('lastNotifiedAt', new Date().toISOString());
       } catch (err) {
         // no-op
       }
+      const data = response?.notification?.request?.content?.data || {};
+      await navigateFromNotification(data);
     });
     return () => {
       receivedSub?.remove?.();
@@ -265,7 +297,23 @@ export default function App() {
           <ThemeProvider>
             <CartProvider>
               <NotificationManager />
-              <NavigationContainer ref={navigationRef}>
+              <NavigationContainer
+                ref={navigationRef}
+                onReady={async () => {
+                  try {
+                    const pendingRaw = await AsyncStorage.getItem(PENDING_ROUTE_KEY);
+                    if (pendingRaw) {
+                      const pending = JSON.parse(pendingRaw);
+                      await AsyncStorage.removeItem(PENDING_ROUTE_KEY);
+                      if (pending?.name && navigationRef.isReady()) {
+                        navigationRef.navigate(pending.name, pending.params);
+                      }
+                    }
+                  } catch (err) {
+                    // no-op
+                  }
+                }}
+              >
                 <StatusBar style="auto" />
                 <StripeProvider publishableKey="pk_test_51Pzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz">
                   {(initialRoute === null || showSplash) ? (

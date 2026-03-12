@@ -232,7 +232,7 @@ export default function MedicineReminderScreen() {
             content: {
               title: `💊 Medicine Reminder: ${medName}`,
               body: `Time to take your ${dosage}. ${notes || ''}`,
-              data: { reminderId: response.data._id },
+              data: { type: 'reminder', reminderId: response.data._id },
               sound: true,
               priority: Notifications.AndroidNotificationPriority.MAX,
               channelId: 'reminders',
