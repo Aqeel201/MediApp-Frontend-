@@ -18,12 +18,15 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Header from "./Header"; // Adjust path as needed
+import { CartContext } from "./CartContext";
 
 const DepositScreen = () => {
   const { width } = useWindowDimensions();
   const navigation = useNavigation();
   const route = useRoute();
   const { orderData, paymentType = "EasyPaisa" } = route.params || {};
+  const { clearCart } = React.useContext(CartContext) || {};
+  const cartClearedRef = useRef(false);
   const [transactionConfirmed, setTransactionConfirmed] = useState(false);
 
   // Handle cancelled/aborted transaction
@@ -37,6 +40,14 @@ const DepositScreen = () => {
     return unsubscribe;
   }, [navigation, transactionConfirmed]);
   const cartItems = orderData?.cartItems || [];
+
+  useEffect(() => {
+    if (!orderData || cartClearedRef.current) return;
+    if (typeof clearCart === "function") {
+      clearCart();
+      cartClearedRef.current = true;
+    }
+  }, [orderData, clearCart]);
   const depositAmount =
     orderData && typeof orderData.orderTotal === "number"
       ? orderData.orderTotal.toFixed(2)
