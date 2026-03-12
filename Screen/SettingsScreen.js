@@ -15,6 +15,7 @@ import PremiumModal from './PremiumModal';
 import axios from 'axios';
 
 const AUTH_BASE = 'https://auth-backend-three-navy.vercel.app';
+const DASHBOARD_BASE = 'https://dashboard-backend-xrss.vercel.app';
 
 
 const SettingsScreen = () => {
@@ -63,16 +64,25 @@ const SettingsScreen = () => {
       await AsyncStorage.setItem('selectedLanguage', selectedLanguage);
       const token = await AsyncStorage.getItem('authToken');
       if (token) {
-        const form = new FormData();
-        form.append('promoOptIn', promoOptIn ? 'true' : 'false');
         const resp = await axios.put(
-          `${AUTH_BASE}/api/auth/update`,
-          form,
+          `${DASHBOARD_BASE}/api/promotions/opt-in`,
+          { promoOptIn: promoOptIn ? 'true' : 'false' },
           { headers: { Authorization: `Bearer ${token}` }, timeout: 15000 }
         );
         const updatedUser = resp?.data?.user;
         if (updatedUser) {
           await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        } else {
+          const storedUser = await AsyncStorage.getItem('user');
+          if (storedUser) {
+            try {
+              const parsed = JSON.parse(storedUser);
+              parsed.promoOptIn = promoOptIn;
+              await AsyncStorage.setItem('user', JSON.stringify(parsed));
+            } catch (e) {
+              // no-op
+            }
+          }
         }
       }
       setModal({
