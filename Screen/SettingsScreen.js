@@ -12,27 +12,9 @@ import { wp, hp, fontSize } from './responsive';
 import { Fingerprint, Bell, Moon, Sun, Languages, User, Lock, MapPin, Trash2, ArrowLeft, CheckCircle, Info, LogOut } from 'lucide-react-native';
 import * as Updates from 'expo-updates';
 import PremiumModal from './PremiumModal';
+import axios from 'axios';
 
-const CHANGELOG = [
-  {
-    version: '1.0.0',
-    date: 'March 11, 2026',
-    items: [
-      'MediApp AI memory improved with summaries and key facts.',
-      'Clickable medicine names inside AI responses.',
-      'Cleaner AI typography and message actions (copy/edit).',
-      'AI suggestions avoid repeating the same medicines.',
-    ],
-  },
-  {
-    version: '1.0.0',
-    date: 'March 10, 2026',
-    items: [
-      'Inline checkout map and location search improvements.',
-      'AI stability fixes and better keyboard behavior.',
-    ],
-  },
-];
+const AUTH_BASE = 'https://auth-backend-three-navy.vercel.app';
 
 
 const SettingsScreen = () => {
@@ -41,6 +23,7 @@ const SettingsScreen = () => {
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [isBiometricsEnabled, setIsBiometricsEnabled] = useState(false);
+  const [promoOptIn, setPromoOptIn] = useState(true);
   const [modal, setModal] = useState({ visible: false, title: '', message: '', type: 'info' });
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -56,6 +39,17 @@ const SettingsScreen = () => {
         setIsNotificationOn(notifications === 'true');
         const lang = await AsyncStorage.getItem('selectedLanguage');
         if (lang) setSelectedLanguage(lang);
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            if (typeof parsed.promoOptIn === 'boolean') {
+              setPromoOptIn(parsed.promoOptIn);
+            }
+          } catch (e) {
+            // no-op
+          }
+        }
       } catch (error) {
         console.error('Error loading settings', error);
       }
@@ -67,6 +61,20 @@ const SettingsScreen = () => {
     try {
       await AsyncStorage.setItem('isNotificationOn', isNotificationOn.toString());
       await AsyncStorage.setItem('selectedLanguage', selectedLanguage);
+      const token = await AsyncStorage.getItem('authToken');
+      if (token) {
+        const form = new FormData();
+        form.append('promoOptIn', promoOptIn ? 'true' : 'false');
+        const resp = await axios.put(
+          `${AUTH_BASE}/api/auth/update`,
+          form,
+          { headers: { Authorization: `Bearer ${token}` }, timeout: 15000 }
+        );
+        const updatedUser = resp?.data?.user;
+        if (updatedUser) {
+          await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+      }
       setModal({
         visible: true,
         title: "Settings Saved",
@@ -207,31 +215,6 @@ const SettingsScreen = () => {
           )}
         </View>
 
-        {/* Change Log Section */}
-        <View style={[styles.section, { borderBottomWidth: 1, borderBottomColor: isDarkMode ? '#333' : '#eee', paddingBottom: 15, marginBottom: 15 }]}>
-          <Text style={[styles.sectionTitle, { color: isDarkMode ? '#aaa' : '#666', fontSize: 12, marginBottom: 10, fontWeight: 'bold' }]}>CHANGE LOG</Text>
-          {CHANGELOG.map((entry, idx) => (
-            <View key={`${entry.version}_${idx}`} style={{ marginBottom: 12 }}>
-              <Text style={[styles.text, { color: isDarkMode ? 'white' : '#333', fontWeight: 'bold' }]}>
-                Version {entry.version}
-              </Text>
-              <Text style={{ color: isDarkMode ? '#888' : '#666', fontSize: 12, marginTop: 2 }}>
-                {entry.date}
-              </Text>
-              <View style={{ marginTop: 6 }}>
-                {entry.items.map((item, i) => (
-                  <Text
-                    key={`${entry.version}_${i}`}
-                    style={{ color: isDarkMode ? '#cbd5f5' : '#475569', fontSize: 12, marginBottom: 4 }}
-                  >
-                    • {item}
-                  </Text>
-                ))}
-              </View>
-            </View>
-          ))}
-        </View>
-
         <View style={styles.item}>
           <Text style={[styles.text, { color: isDarkMode ? 'white' : '#333' }]}>Enable Notifications</Text>
           <ToggleSwitch
@@ -252,6 +235,20 @@ const SettingsScreen = () => {
             labelStyle={{ color: isDarkMode ? 'white' : 'black' }}
             size="medium"
             onToggle={(isOn) => setIsDarkMode(isOn)}
+          />
+        </View>
+        <View style={styles.item}>
+          <View>
+            <Text style={[styles.text, { color: isDarkMode ? 'white' : '#333' }]}>Promotional Emails</Text>
+            <Text style={{ color: isDarkMode ? '#888' : '#666', fontSize: 12 }}>Receive health tips and offers</Text>
+          </View>
+          <ToggleSwitch
+            isOn={promoOptIn}
+            onColor="#0d6efd"
+            offColor="#ccc"
+            labelStyle={{ color: isDarkMode ? 'white' : 'black' }}
+            size="medium"
+            onToggle={(isOn) => setPromoOptIn(isOn)}
           />
         </View>
         <View style={styles.item}>

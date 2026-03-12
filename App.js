@@ -88,6 +88,7 @@ const NotificationManager = () => {
   const pollRef = useRef(null);
   const registerRef = useRef(null);
   const registeredRef = useRef(false);
+  const lastActiveRef = useRef(AppState.currentState);
 
   const registerForPushNotifications = async () => {
     try {
@@ -134,6 +135,7 @@ const NotificationManager = () => {
 
   const pollNotifications = async () => {
     try {
+      const appState = AppState.currentState;
       const authToken = await AsyncStorage.getItem('authToken');
       if (!authToken) return;
       const resp = await axios.get(`${API_BASE}/api/notifications`, {
@@ -161,6 +163,10 @@ const NotificationManager = () => {
       const latestTime = Math.max(...fresh.map((n) => new Date(n.date).getTime()).filter(Boolean));
       if (latestTime) {
         await AsyncStorage.setItem('lastNotifiedAt', new Date(latestTime).toISOString());
+      }
+
+      if (appState === 'active') {
+        return;
       }
 
       for (const n of fresh.slice(0, 3)) {
@@ -192,7 +198,10 @@ const NotificationManager = () => {
     pollNotifications();
     pollRef.current = setInterval(pollNotifications, 60000);
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') pollNotifications();
+      if (state === 'active') {
+        pollNotifications();
+      }
+      lastActiveRef.current = state;
     });
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -201,12 +210,20 @@ const NotificationManager = () => {
   }, []);
 
   useEffect(() => {
+    const receivedSub = Notifications.addNotificationReceivedListener(async () => {
+      try {
+        await AsyncStorage.setItem('lastNotifiedAt', new Date().toISOString());
+      } catch (err) {
+        // no-op
+      }
+    });
     const responseSub = Notifications.addNotificationResponseReceivedListener(() => {
       if (navigationRef.isReady()) {
         navigationRef.navigate('NotificationPage');
       }
     });
     return () => {
+      receivedSub?.remove?.();
       responseSub?.remove?.();
     };
   }, []);
