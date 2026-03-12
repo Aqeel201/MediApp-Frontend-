@@ -29,6 +29,7 @@ const OrderHistoryScreen = ({ navigation }) => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState([]);
+  const [transactionsByOrder, setTransactionsByOrder] = useState({});
   const [userId, setUserId] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -58,6 +59,20 @@ const OrderHistoryScreen = ({ navigation }) => {
         setOrders(json.orders);
       } else {
         setOrders([]);
+      }
+      try {
+        const txnRes = await fetch(`https://dashboard-backend-xrss.vercel.app/api/transactions?userId=${userId}`);
+        const txns = await txnRes.json();
+        const map = {};
+        (Array.isArray(txns) ? txns : []).forEach((txn) => {
+          if (txn?.orderId) {
+            map[String(txn.orderId)] = txn;
+          }
+        });
+        setTransactionsByOrder(map);
+      } catch (txnErr) {
+        console.warn('Failed to load transactions for orders:', txnErr.message);
+        setTransactionsByOrder({});
       }
     } catch (error) {
       console.error("Error fetching orders: ", error);
@@ -108,7 +123,10 @@ const OrderHistoryScreen = ({ navigation }) => {
       o.paymentMethod === 'EasyPaisa' &&
       o.status === 'pending' &&
       o.paymentStatus !== 'paid' &&
-      !o.transactionId
+      (() => {
+        const txn = transactionsByOrder[String(o._id)];
+        return !txn || String(txn.transactionID || '').startsWith('PENDING-');
+      })()
   );
 
   // Helper: Format date using moment.js
@@ -156,11 +174,18 @@ const OrderHistoryScreen = ({ navigation }) => {
                   <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                     <Text style={styles.statusText}>{item.status}</Text>
                   </View>
-                  {item.paymentMethod === 'EasyPaisa' && (
-                    <View style={[styles.paymentStatusBadge, { backgroundColor: item.paymentStatus === 'paid' ? '#22c55e' : '#ef4444' }]}>
-                      <Text style={styles.paymentStatusText}>{item.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</Text>
+                {item.paymentMethod === 'EasyPaisa' && (() => {
+                  const txn = transactionsByOrder[String(item._id)];
+                  const isPaid = item.paymentStatus === 'paid';
+                  const isPlaceholder = txn && String(txn.transactionID || '').startsWith('PENDING-');
+                  const label = isPaid ? 'Paid' : (txn && !isPlaceholder ? 'Verifying' : 'Unpaid');
+                  const color = isPaid ? '#22c55e' : (txn && !isPlaceholder ? '#f59e0b' : '#ef4444');
+                  return (
+                    <View style={[styles.paymentStatusBadge, { backgroundColor: color }]}>
+                      <Text style={styles.paymentStatusText}>{label}</Text>
                     </View>
-                  )}
+                  );
+                })()}
                 </View>
               </View>
               <View style={styles.medicinesContainer}>
@@ -179,7 +204,10 @@ const OrderHistoryScreen = ({ navigation }) => {
                 <Text style={styles.orderDate}>
                   {formatDate(item.date)}
                 </Text>
-                {item.paymentMethod === 'EasyPaisa' && item.status === 'pending' && item.paymentStatus !== 'paid' && !item.transactionId && (
+                {item.paymentMethod === 'EasyPaisa' && item.status === 'pending' && item.paymentStatus !== 'paid' && (() => {
+                  const txn = transactionsByOrder[String(item._id)];
+                  return !txn || String(txn.transactionID || '').startsWith('PENDING-');
+                })() && (
                   <TouchableOpacity
                     style={styles.completePaymentButton}
                     onPress={() => navigation.navigate('JazzCashPayment', {
