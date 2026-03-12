@@ -35,6 +35,7 @@ const TransactionHistoryScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const pendingTransactions = transactions.filter((t) => t.status === 'Pending');
 
   // Retrieve logged-in user data from AsyncStorage
   useEffect(() => {
@@ -134,19 +135,35 @@ const TransactionHistoryScreen = () => {
 
         {loading ? (
           <ActivityIndicator size="large" color="#6d28d9" style={styles.loader} />
-        ) : transactions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <FontAwesomeIcon icon={faBoxOpen} size={60} color="#94a3b8" />
-            <Text style={styles.emptyText}>No transactions found</Text>
-          </View>
         ) : (
-          <FlatList
-            data={transactions}
-            renderItem={renderItem}
-            keyExtractor={(item) => item._id}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          />
+          <>
+            {pendingTransactions.length > 0 && (
+              <TouchableOpacity
+                style={styles.pendingBanner}
+                onPress={() => navigation.navigate('OrderHistory')}
+              >
+                <Text style={styles.pendingBannerTitle}>Payment Incomplete</Text>
+                <Text style={styles.pendingBannerText}>
+                  Your transaction is pending. Tap to complete payment.
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {transactions.length === 0 ? (
+              <View style={styles.emptyState}>
+                <FontAwesomeIcon icon={faBoxOpen} size={60} color="#94a3b8" />
+                <Text style={styles.emptyText}>No transactions found</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={transactions}
+                renderItem={renderItem}
+                keyExtractor={(item) => item._id}
+                contentContainerStyle={styles.listContainer}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+              />
+            )}
+          </>
         )}
 
         {/* Transaction Details Modal */}
@@ -312,6 +329,25 @@ const getStyles = (isDarkMode) =>
     emptyText: {
       fontSize: 18,
       color: isDarkMode ? '#94a3b8' : '#64748b',
+    },
+    pendingBanner: {
+      marginHorizontal: 16,
+      marginBottom: 12,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: isDarkMode ? '#2d1b0c' : '#fff3e0',
+      borderWidth: 1,
+      borderColor: isDarkMode ? '#f59e0b' : '#ffb74d',
+    },
+    pendingBannerTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: isDarkMode ? '#f59e0b' : '#ef6c00',
+      marginBottom: 4,
+    },
+    pendingBannerText: {
+      fontSize: 13,
+      color: isDarkMode ? '#fcd34d' : '#7c2d12',
     },
     listContainer: {
       paddingBottom: 20,

@@ -228,6 +228,9 @@ const DepositScreen = () => {
           <Text style={styles.instructionText}>
             You are purchasing the following products:
           </Text>
+          <TouchableOpacity style={styles.homeButton} onPress={() => navigation.navigate("Home")}>
+            <Text style={styles.homeButtonText}>Go to Home</Text>
+          </TouchableOpacity>
 
           {/* Purchasing Items Box */}
           <View style={styles.productDetailsBox}>
@@ -553,6 +556,8 @@ const styles = StyleSheet.create({
   totalAmountBox: { backgroundColor: "#007bff", borderRadius: 8, paddingVertical: 10, paddingHorizontal: 8, marginBottom: 15, alignItems: "center" },
   totalAmountLabel: { fontSize: 14, color: "#ffffff", marginBottom: 3 },
   totalAmountText: { fontSize: 20, fontWeight: "700", color: "#ffffff" },
+  homeButton: { alignSelf: "flex-end", marginTop: 6, marginBottom: 12, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10, backgroundColor: "#e5f0ff" },
+  homeButtonText: { color: "#2563eb", fontWeight: "700", fontSize: 13 },
   noteBox: { borderWidth: 1, borderColor: "#dc3545", borderRadius: 8, padding: 8, marginBottom: 15, backgroundColor: "#fff5f5" },
   noteText: { fontSize: 12, color: "#dc3545", textAlign: "center", lineHeight: 18 },
   detailCard: { backgroundColor: "#f8f9fa", borderRadius: 12, padding: 12, marginBottom: 15, elevation: 2 },

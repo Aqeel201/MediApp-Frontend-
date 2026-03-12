@@ -218,35 +218,12 @@ const HomeScreen = () => {
       return;
     }
     try {
-      console.log(`Fetching pending orders for: ${email}`);
-
-      // First, sync orders with accepted transactions to ensure consistency
-      try {
-        await axios.post(`https://dashboard-backend-xrss.vercel.app/api/orders/sync-transactions/${email}`);
-        console.log('Orders synced with accepted transactions');
-      } catch (syncError) {
-        console.log('Sync call failed (non-critical):', syncError.message);
-      }
-
-      const response = await axios.get(`https://dashboard-backend-xrss.vercel.app/api/order?userId=${email}`);
-
-      if (response.data && response.data.orders) {
-        // More robust filtering: only show if the order is still pending in BOTH status AND paymentStatus, and has no transaction link.
-        const pending = response.data.orders.filter(o =>
-          o.status === 'pending' &&
-          o.paymentStatus === 'unpaid' &&
-          o.paymentMethod === 'EasyPaisa' &&
-          (!o.transactionId || o.transactionId === "") &&
-          (!o.completedAt || new Date(o.completedAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)) // Only show if not completed more than 24h ago
-        );
-        console.log(`Found ${pending.length} truly pending orders for ${email}`);
-        setPendingOrderCount(pending.length);
-      } else {
-        setPendingOrderCount(0);
-      }
+      const response = await axios.get(`${API_BASE}/api/transactions?userId=${email}`);
+      const transactions = response.data?.transactions || response.data || [];
+      const pending = transactions.filter(t => t.status === 'Pending');
+      setPendingOrderCount(pending.length);
     } catch (e) {
-      console.error("Error fetching pending orders:", e.message);
-      // If the API fails, we shouldn't show a misleading count
+      console.error("Error fetching pending transactions:", e.message);
       setPendingOrderCount(0);
     }
   };
@@ -419,7 +396,7 @@ const HomeScreen = () => {
         {pendingOrderCount > 0 && (
           <TouchableOpacity
             style={styles.notificationTouchable}
-            onPress={() => navigation.navigate('OrderHistory')}
+            onPress={() => navigation.navigate('TransactionHistory')}
           >
             <LinearGradient
               colors={['#FF9800', '#F57C00']}
@@ -431,8 +408,8 @@ const HomeScreen = () => {
                 <FontAwesomeIcon icon={faBell} color="#fff" size={18} />
               </View>
               <Text style={styles.pendingText}>
-                You have {pendingOrderCount} pending payment{pendingOrderCount > 1 ? 's' : ''}. {'\n'}
-                <Text style={styles.pendingSubText}>Tap to complete your order</Text>
+                Your transaction is incomplete. {'\n'}
+                <Text style={styles.pendingSubText}>Tap to complete payment</Text>
               </Text>
             </LinearGradient>
           </TouchableOpacity>
