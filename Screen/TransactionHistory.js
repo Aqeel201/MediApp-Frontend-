@@ -94,7 +94,7 @@ const TransactionHistoryScreen = () => {
     >
       <View style={styles.cardHeader}>
         <FontAwesomeIcon icon={faReceipt} size={20} color={isDarkMode ? '#7c3aed' : '#6d28d9'} />
-        <Text style={styles.transactionReference}>
+        <Text style={styles.transactionReference} numberOfLines={1} ellipsizeMode="middle">
           {item.transactionID || `#${item._id.slice(-6).toUpperCase()}`}
         </Text>
         <Text
@@ -277,6 +277,8 @@ const getStyles = (isDarkMode) =>
       fontSize: 16,
       fontWeight: '600',
       color: isDarkMode ? '#e2e8f0' : '#475569',
+      flex: 1,
+      marginHorizontal: 8,
     },
     transactionStatus: {
       fontSize: 14,
@@ -285,6 +287,8 @@ const getStyles = (isDarkMode) =>
       paddingHorizontal: 12,
       paddingVertical: 4,
       borderRadius: 20,
+      minWidth: 88,
+      textAlign: 'center',
     },
     statusSuccess: {
       backgroundColor: '#dcfce7',

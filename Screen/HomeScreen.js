@@ -407,10 +407,15 @@ const HomeScreen = () => {
               <View style={styles.notificationIcon}>
                 <FontAwesomeIcon icon={faBell} color="#fff" size={18} />
               </View>
-              <Text style={styles.pendingText}>
-                Your transaction is incomplete. {'\n'}
+              <View style={styles.pendingTextWrap}>
+                <Text style={styles.pendingText}>
+                  Your transaction is incomplete.
+                </Text>
                 <Text style={styles.pendingSubText}>Tap to complete payment</Text>
-              </Text>
+              </View>
+              <View style={styles.pendingAction}>
+                <Text style={styles.pendingActionText}>Complete</Text>
+              </View>
             </LinearGradient>
           </TouchableOpacity>
         )
@@ -1048,6 +1053,7 @@ const getStyles = (isDarkMode, screenWidth, insets = { top: 0, bottom: 0 }) =>
       padding: 15,
       alignItems: 'center',
       borderRadius: 15,
+      justifyContent: 'space-between',
     },
     notificationIcon: {
       width: 40,
@@ -1058,16 +1064,30 @@ const getStyles = (isDarkMode, screenWidth, insets = { top: 0, bottom: 0 }) =>
       alignItems: 'center',
       marginRight: 12,
     },
+    pendingTextWrap: {
+      flex: 1,
+    },
     pendingText: {
       color: "#fff",
       fontWeight: "700",
       fontSize: fontSize(14),
-      flex: 1,
     },
     pendingSubText: {
       fontSize: fontSize(12),
       fontWeight: "400",
       opacity: 0.9,
+    },
+    pendingAction: {
+      marginLeft: 12,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+    },
+    pendingActionText: {
+      color: '#fff',
+      fontWeight: '700',
+      fontSize: fontSize(11),
     },
   });
 
