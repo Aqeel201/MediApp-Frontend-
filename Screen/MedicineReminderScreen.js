@@ -40,6 +40,7 @@ export default function MedicineReminderScreen() {
   const [repeat, setRepeat] = useState('None');
   const [time, setTime] = useState(new Date());
   const [date, setDate] = useState(new Date());
+  const [reminderSound, setReminderSound] = useState('default');
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const route = useRoute();
@@ -64,6 +65,42 @@ export default function MedicineReminderScreen() {
   useEffect(() => {
     loadToken();
   }, [loadToken]);
+
+  useEffect(() => {
+    const loadSoundPref = async () => {
+      try {
+        const saved = await AsyncStorage.getItem('reminderSound');
+        if (saved) setReminderSound(saved);
+      } catch (err) {
+        // no-op
+      }
+    };
+    loadSoundPref();
+  }, []);
+
+  const ensureReminderChannel = async (sound) => {
+    if (Platform.OS !== 'android') return 'reminders';
+    const channelId = sound === 'silent' ? 'reminders_silent' : 'reminders_default';
+    await Notifications.setNotificationChannelAsync(channelId, {
+      name: 'Medicine Reminders',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 800, 400, 800, 400, 800],
+      lightColor: '#FF231F7C',
+      enableVibrate: true,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      sound: sound === 'silent' ? null : 'default',
+    });
+    return channelId;
+  };
+
+  const handleSoundChange = async (value) => {
+    setReminderSound(value);
+    try {
+      await AsyncStorage.setItem('reminderSound', value);
+    } catch (err) {
+      // no-op
+    }
+  };
 
   const fetchMedicines = async () => {
     try {
@@ -138,15 +175,8 @@ export default function MedicineReminderScreen() {
   }, [authToken, editItem]);
 
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      Notifications.setNotificationChannelAsync('reminders', {
-        name: 'Medicine Reminders',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF231F7C',
-      });
-    }
-  }, []);
+    ensureReminderChannel(reminderSound);
+  }, [reminderSound]);
 
   const addReminder = async () => {
     if ((!selectedMedicine && !customMedicine) || !dosage) {
@@ -228,14 +258,15 @@ export default function MedicineReminderScreen() {
 
       if (notificationTrigger) {
         try {
+          const channelId = await ensureReminderChannel(reminderSound);
           await Notifications.scheduleNotificationAsync({
             content: {
               title: `💊 Medicine Reminder: ${medName}`,
               body: `Time to take your ${dosage}. ${notes || ''}`,
               data: { type: 'reminder', reminderId: response.data._id },
-              sound: true,
+              sound: reminderSound === 'silent' ? null : 'default',
               priority: Notifications.AndroidNotificationPriority.MAX,
-              channelId: 'reminders',
+              channelId,
             },
             trigger: notificationTrigger,
           });
@@ -416,6 +447,21 @@ export default function MedicineReminderScreen() {
                   </TouchableOpacity>
                 </View>
 
+                <View style={styles.soundWrapper}>
+                  <Text style={styles.fieldLabel}>Reminder Sound</Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={reminderSound}
+                      onValueChange={handleSoundChange}
+                      style={styles.picker}
+                      dropdownIconColor={isDarkMode ? "#aaa" : "#888"}
+                    >
+                      <Picker.Item label="System Default" value="default" />
+                      <Picker.Item label="Silent (Vibrate Only)" value="silent" />
+                    </Picker>
+                  </View>
+                </View>
+
                 <View style={styles.inputWrapper}>
                   <TextInput
                     placeholder="Notes (optional)"
@@ -557,6 +603,13 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     paddingHorizontal: wp(2),
     marginBottom: hp(1.5), // Using margin instead of gap
   },
+  pickerContainer: {
+    backgroundColor: isDarkMode ? '#252525' : '#f0f2f5',
+    borderRadius: 15,
+    height: hp(7),
+    justifyContent: 'center',
+    paddingHorizontal: wp(2),
+  },
   picker: {
     color: isDarkMode ? '#fff' : '#333',
     width: '100%',
@@ -569,6 +622,19 @@ const getStyles = (isDarkMode, insets) => StyleSheet.create({
     paddingHorizontal: wp(4),
     justifyContent: 'center',
     marginBottom: hp(1.5), // Space between inputs
+  },
+  soundWrapper: {
+    backgroundColor: isDarkMode ? '#252525' : '#f0f2f5',
+    borderRadius: 15,
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1.2),
+    marginBottom: hp(1.5),
+  },
+  fieldLabel: {
+    fontSize: fontSize(12),
+    color: isDarkMode ? '#aaa' : '#666',
+    marginBottom: 6,
+    fontWeight: '600',
   },
   textInput: {
     fontSize: fontSize(15),

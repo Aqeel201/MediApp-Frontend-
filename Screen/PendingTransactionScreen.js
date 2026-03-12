@@ -10,8 +10,9 @@ const PendingTransactionScreen = ({ navigation, route }) => {
   // Timer countdown for 20 minutes
   useEffect(() => {
     const timer = setInterval(() => {
-      const createdTime = new Date(transaction.createdAt);
+      const createdRaw = new Date(transaction.createdAt);
       const now = new Date();
+      const createdTime = createdRaw > now ? now : createdRaw;
       const diff = 20 * 60 * 1000 - (now - createdTime);
       if (diff > 0) {
         const minutes = Math.floor(diff / (60 * 1000));

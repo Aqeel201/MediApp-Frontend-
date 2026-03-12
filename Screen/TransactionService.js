@@ -30,7 +30,9 @@ class TransactionService {
   // Add a pending transaction with a 20-minute timer
   addPendingTransaction(transaction) {
     const transactionId = transaction._id;
-    const createdAt = new Date(transaction.createdAt);
+    const createdRaw = new Date(transaction.createdAt);
+    const now = new Date();
+    const createdAt = createdRaw > now ? now : createdRaw;
     const timer = {
       timeLeft: "",
       interval: setInterval(() => {
