@@ -103,6 +103,12 @@ const OrderHistoryScreen = ({ navigation }) => {
       item.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
+  const pendingOrders = orders.filter(
+    (o) =>
+      o.paymentMethod === 'EasyPaisa' &&
+      o.status === 'pending' &&
+      o.paymentStatus !== 'paid'
+  );
 
   // Helper: Format date using moment.js
   const formatDate = (dateString) => moment(dateString).format('DD MMM YYYY, hh:mm A');
@@ -150,8 +156,8 @@ const OrderHistoryScreen = ({ navigation }) => {
                     <Text style={styles.statusText}>{item.status}</Text>
                   </View>
                   {item.paymentMethod === 'EasyPaisa' && (
-                    <View style={[styles.paymentStatusBadge, { backgroundColor: item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800' }]}>
-                      <Text style={styles.paymentStatusText}>{item.paymentStatus === 'paid' ? '✓ Paid' : 'Unpaid'}</Text>
+                    <View style={[styles.paymentStatusBadge, { backgroundColor: item.paymentStatus === 'paid' ? '#22c55e' : '#f59e0b' }]}>
+                      <Text style={styles.paymentStatusText}>{item.paymentStatus === 'paid' ? 'Paid' : 'Pending'}</Text>
                     </View>
                   )}
                 </View>
@@ -225,6 +231,52 @@ const OrderHistoryScreen = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListHeaderComponent={
+            pendingOrders.length > 0 ? (
+              <View style={styles.pendingBlock}>
+                <View style={styles.pendingTitleRow}>
+                  <Text style={styles.pendingTitle}>Pending Payments</Text>
+                  <View style={styles.pendingCountPill}>
+                    <Text style={styles.pendingCountText}>{pendingOrders.length}</Text>
+                  </View>
+                </View>
+                <Text style={styles.pendingHint}>Complete payment to confirm your orders.</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {pendingOrders.map((order) => (
+                    <View key={order._id} style={styles.pendingCard}>
+                      <View style={styles.pendingCardHeader}>
+                        <Text style={styles.pendingOrderId}>#{order._id ? order._id.slice(-6).toUpperCase() : 'N/A'}</Text>
+                        <View style={styles.pendingPill}>
+                          <Clock size={14} color="#fff" />
+                          <Text style={styles.pendingPillText}>Pending</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.pendingItems} numberOfLines={1}>
+                        {order.cartItems?.[0]?.name || 'Items'} x{order.cartItems?.[0]?.cartQuantity || 1}
+                        {order.cartItems && order.cartItems.length > 1 ? ` +${order.cartItems.length - 1} more` : ''}
+                      </Text>
+                      <View style={styles.pendingCardFooter}>
+                        <Text style={styles.pendingAmount}>Rs. {order.orderTotal?.toFixed(2) || '0.00'}</Text>
+                        <TouchableOpacity
+                          style={styles.pendingPayButton}
+                          onPress={() => navigation.navigate('JazzCashPayment', {
+                            orderData: {
+                              orderTotal: order.orderTotal,
+                              cartItems: order.cartItems,
+                              shippingFee: order.shippingFee,
+                              orderId: order._id
+                            }
+                          })}
+                        >
+                          <Text style={styles.pendingPayText}>Complete</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null
           }
         />
 
@@ -373,6 +425,13 @@ const getStyles = (isDarkMode, width = 375, height = 667) => StyleSheet.create({
     fontWeight: '600',
     color: isDarkMode ? '#fff' : '#007bff',
   },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+  },
   statusBadge: {
     paddingVertical: 4,
     paddingHorizontal: 12,
@@ -382,6 +441,16 @@ const getStyles = (isDarkMode, width = 375, height = 667) => StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '500',
+  },
+  paymentStatusBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+  },
+  paymentStatusText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   medicinesContainer: {
     marginBottom: 12,
@@ -408,10 +477,116 @@ const getStyles = (isDarkMode, width = 375, height = 667) => StyleSheet.create({
     color: isDarkMode ? '#888' : '#666',
     fontSize: 12,
   },
+  completePaymentButton: {
+    backgroundColor: '#22c55e',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  completePaymentText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+  },
   orderTotal: {
     color: isDarkMode ? '#fff' : '#000',
     fontSize: 16,
     fontWeight: '600',
+  },
+  pendingBlock: {
+    backgroundColor: isDarkMode ? '#1f2937' : '#fff7ed',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#334155' : '#fed7aa',
+  },
+  pendingTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  pendingTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: isDarkMode ? '#fbbf24' : '#9a3412',
+  },
+  pendingCountPill: {
+    backgroundColor: isDarkMode ? '#f59e0b' : '#fdba74',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  pendingCountText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  pendingHint: {
+    fontSize: 12,
+    color: isDarkMode ? '#d1d5db' : '#7c2d12',
+    marginBottom: 10,
+  },
+  pendingCard: {
+    width: wp(62),
+    backgroundColor: isDarkMode ? '#0f172a' : '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#1f2937' : '#fde68a',
+  },
+  pendingCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  pendingOrderId: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: isDarkMode ? '#e2e8f0' : '#0f172a',
+  },
+  pendingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  pendingPillText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  pendingItems: {
+    fontSize: 12,
+    color: isDarkMode ? '#cbd5f5' : '#475569',
+    marginBottom: 10,
+  },
+  pendingCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pendingAmount: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: isDarkMode ? '#fff' : '#111827',
+  },
+  pendingPayButton: {
+    backgroundColor: '#16a34a',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  pendingPayText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
   },
   modalContainer: {
     flex: 1,
@@ -520,19 +695,6 @@ const getStyles = (isDarkMode, width = 375, height = 667) => StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 14,
-  },
-  completePaymentButton: {
-    backgroundColor: '#28a745',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginTop: 5,
-  },
-  completePaymentText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
 });
 
