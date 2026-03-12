@@ -80,8 +80,8 @@ const PENDING_ROUTE_KEY = 'pendingNotificationRoute';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: AppState.currentState !== 'active',
-    shouldPlaySound: AppState.currentState !== 'active',
+    shouldShowAlert: true,
+    shouldPlaySound: true,
     shouldSetBadge: false,
   }),
 });
@@ -242,6 +242,23 @@ const NotificationManager = () => {
   }, []);
 
   useEffect(() => {
+    const handleLastResponse = async () => {
+      try {
+        const lastResponse = await Notifications.getLastNotificationResponseAsync();
+        const lastId = lastResponse?.notification?.request?.identifier;
+        if (!lastId) return;
+        const handledId = await AsyncStorage.getItem('lastHandledNotificationId');
+        if (handledId === lastId) return;
+        await AsyncStorage.setItem('lastHandledNotificationId', lastId);
+        const data = lastResponse?.notification?.request?.content?.data || {};
+        await navigateFromNotification(data);
+      } catch (err) {
+        // no-op
+      }
+    };
+
+    handleLastResponse();
+
     const receivedSub = Notifications.addNotificationReceivedListener(async () => {
       try {
         await AsyncStorage.setItem('lastNotifiedAt', new Date().toISOString());
@@ -252,6 +269,10 @@ const NotificationManager = () => {
     const responseSub = Notifications.addNotificationResponseReceivedListener(async (response) => {
       try {
         await AsyncStorage.setItem('lastNotifiedAt', new Date().toISOString());
+        const notifId = response?.notification?.request?.identifier;
+        if (notifId) {
+          await AsyncStorage.setItem('lastHandledNotificationId', notifId);
+        }
       } catch (err) {
         // no-op
       }
