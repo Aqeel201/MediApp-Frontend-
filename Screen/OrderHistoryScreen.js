@@ -172,26 +172,20 @@ const OrderHistoryScreen = ({ navigation }) => {
                 <Text style={styles.orderDate}>
                   {formatDate(item.date)}
                 </Text>
-                {item.paymentMethod === 'EasyPaisa' && item.status === 'pending' && (
-                  item.transactionId ? (
-                    <View style={[styles.completePaymentButton, { backgroundColor: '#FFC107' }]}>
-                      <Text style={styles.completePaymentText}>Verifying Payment...</Text>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.completePaymentButton}
-                      onPress={() => navigation.navigate('JazzCashPayment', {
-                        orderData: {
-                          orderTotal: item.orderTotal,
-                          cartItems: item.cartItems,
-                          shippingFee: item.shippingFee,
-                          orderId: item._id
-                        }
-                      })}
-                    >
-                      <Text style={styles.completePaymentText}>Complete Payment</Text>
-                    </TouchableOpacity>
-                  )
+                {item.paymentMethod === 'EasyPaisa' && item.status === 'pending' && item.paymentStatus !== 'paid' && (
+                  <TouchableOpacity
+                    style={styles.completePaymentButton}
+                    onPress={() => navigation.navigate('JazzCashPayment', {
+                      orderData: {
+                        orderTotal: item.orderTotal,
+                        cartItems: item.cartItems,
+                        shippingFee: item.shippingFee,
+                        orderId: item._id
+                      }
+                    })}
+                  >
+                    <Text style={styles.completePaymentText}>Complete Payment</Text>
+                  </TouchableOpacity>
                 )}
                 <Text style={styles.orderTotal}>
                   Rs. {item.orderTotal?.toFixed(2) || '0.00'}

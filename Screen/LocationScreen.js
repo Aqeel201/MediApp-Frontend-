@@ -407,11 +407,28 @@ const LocationScreen = () => {
     };
 
     if (formData.paymentMethod === 2) {
-      // Navigate to Payment Screen for EasyPaisa
-      navigation.navigate("JazzCashPayment", {
-        orderData,
-        paymentType: "EasyPaisa"
-      });
+      try {
+        const response = await fetch("https://dashboard-backend-xrss.vercel.app/api/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderData),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Failed to place order");
+        clearCart();
+        navigation.navigate("JazzCashPayment", {
+          orderData: data.order,
+          paymentType: "EasyPaisa",
+        });
+      } catch (error) {
+        console.error("Order submission error:", error);
+        setModal({
+          visible: true,
+          title: "Order Failed",
+          message: error.message || "Something went wrong while placing your order. Please try again.",
+          type: "error"
+        });
+      }
       return;
     }
 
