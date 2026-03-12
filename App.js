@@ -219,9 +219,11 @@ const NotificationManager = () => {
         // no-op
       }
     });
-    const responseSub = Notifications.addNotificationResponseReceivedListener(() => {
-      if (navigationRef.isReady()) {
-        navigationRef.navigate('NotificationPage');
+    const responseSub = Notifications.addNotificationResponseReceivedListener(async () => {
+      try {
+        await AsyncStorage.setItem('lastNotifiedAt', new Date().toISOString());
+      } catch (err) {
+        // no-op
       }
     });
     return () => {
