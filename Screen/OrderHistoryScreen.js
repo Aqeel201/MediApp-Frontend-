@@ -107,7 +107,8 @@ const OrderHistoryScreen = ({ navigation }) => {
     (o) =>
       o.paymentMethod === 'EasyPaisa' &&
       o.status === 'pending' &&
-      o.paymentStatus !== 'paid'
+      o.paymentStatus !== 'paid' &&
+      !o.transactionId
   );
 
   // Helper: Format date using moment.js
@@ -178,7 +179,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                 <Text style={styles.orderDate}>
                   {formatDate(item.date)}
                 </Text>
-                {item.paymentMethod === 'EasyPaisa' && item.status === 'pending' && item.paymentStatus !== 'paid' && (
+                {item.paymentMethod === 'EasyPaisa' && item.status === 'pending' && item.paymentStatus !== 'paid' && !item.transactionId && (
                   <TouchableOpacity
                     style={styles.completePaymentButton}
                     onPress={() => navigation.navigate('JazzCashPayment', {
